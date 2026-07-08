@@ -1,7 +1,7 @@
 import { products as defaultProducts, categories as defaultCategories, type Product, type Category } from "@/lib/products"
 
-const PRODUCTS_KEY = "cc_products"
-const CATEGORIES_KEY = "cc_categories"
+const PRODUCTS_KEY = "sd_products"
+const CATEGORIES_KEY = "sd_categories"
 
 // ─── Productos ────────────────────────────────────────────────────────────────
 

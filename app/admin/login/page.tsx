@@ -59,10 +59,10 @@ export default function AdminLoginPage() {
             <ShoppingBag size={28} style={{ color: "oklch(1 0 0)" }} />
           </div>
           <h1 className="text-2xl font-extrabold" style={{ color: "oklch(0.2 0.02 270)" }}>
-            Panel de Administración
+            Panel de Administracion
           </h1>
           <p className="text-sm mt-1" style={{ color: "oklch(0.55 0.03 270)" }}>
-            Cotillón Cienfuegos Concordia
+            Santa Diabla
           </p>
         </div>
 

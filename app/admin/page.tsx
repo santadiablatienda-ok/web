@@ -13,6 +13,7 @@ import { isAuthenticated, logout } from "@/lib/auth"
 import { getProducts, saveProducts, resetProducts, getCategories, saveCategories, resetCategories } from "@/lib/products-store"
 import { categories as defaultCategories, formatPrice, type Product, type Category } from "@/lib/products"
 import { getClients, createClient, updateClient, deleteClient, type WholesaleClient } from "@/lib/wholesale-store"
+import { getOrders, updateOrderStatus, deleteOrder, type Order } from "@/lib/orders-store"
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -27,9 +28,9 @@ const BADGE_COLORS = [
 
 function emptyProduct(): Omit<Product, "id"> {
   return {
-    name: "", description: "", price: 0, category: "cotillon",
-    image: "", imageAlt: "", badge: "", badgeColor: "oklch(0.6 0.22 5)",
-    featured: false, colors: [], features: [],
+    name: "", description: "", price: 0, category: "botas",
+    image: "", imageAlt: "", badge: "",
+    featured: false, colors: [], sizes: [], stock: 10, isEncargo: false,
   }
 }
 
@@ -53,7 +54,8 @@ const inputStyle = { borderColor: "oklch(0.88 0.03 90)", backgroundColor: "oklch
 export default function AdminPage() {
   const router = useRouter()
   const [checking, setChecking] = useState(true)
-  const [activeTab, setActiveTab] = useState<"products" | "categories" | "wholesale">("products")
+  const [activeTab, setActiveTab] = useState<"products" | "categories" | "wholesale" | "orders" | "metrics">("products")
+  const [orders, setOrders] = useState<Order[]>([])
   const [saved, setSaved] = useState(false)
 
   // Products
@@ -84,6 +86,7 @@ export default function AdminPage() {
     setProducts(getProducts())
     setCategories(getCategories())
     setClients(getClients())
+    setOrders(getOrders())
     setChecking(false)
   }, [router])
 
@@ -177,7 +180,7 @@ export default function AdminPage() {
           </div>
           <div>
             <p className="text-sm font-extrabold leading-none" style={{ color: "oklch(0.2 0.02 270)" }}>Panel Admin</p>
-            <p className="text-xs mt-0.5" style={{ color: "oklch(0.55 0 0)" }}>Cotillón Cienfuegos</p>
+            <p className="text-xs mt-0.5" style={{ color: "oklch(0.55 0 0)" }}>Santa Diabla</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -205,11 +208,13 @@ export default function AdminPage() {
         <div className="flex gap-1 max-w-6xl mx-auto overflow-x-auto">
           {[
             { id: "products", label: "Productos", icon: Package },
-            { id: "categories", label: "Categorías", icon: Tag },
+            { id: "categories", label: "Categorias", icon: Tag },
+            { id: "orders", label: "Pedidos", icon: ShoppingBag },
+            { id: "metrics", label: "Metricas", icon: CheckCircle2 },
             { id: "wholesale", label: "Mayoristas", icon: Users },
           ].map(({ id, label, icon: Icon }) => (
             <button key={id}
-              onClick={() => setActiveTab(id as "products" | "categories" | "wholesale")}
+              onClick={() => setActiveTab(id as "products" | "categories" | "wholesale" | "orders" | "metrics")}
               className="flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
               style={{
                 borderColor: activeTab === id ? "oklch(0.38 0.12 248)" : "transparent",
@@ -507,6 +512,142 @@ export default function AdminPage() {
         )}
 
         {/* ══════════════════════════════════════════════════════════════════════
+            TAB: PEDIDOS
+        ══════════════════════════════════════════════════════════════════════ */}
+        {activeTab === "orders" && (
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold" style={{ color: "oklch(0.2 0.02 270)" }}>Pedidos recibidos</p>
+                <p className="text-xs mt-0.5" style={{ color: "oklch(0.55 0 0)" }}>{orders.length} pedido{orders.length !== 1 ? "s" : ""} en total</p>
+              </div>
+              <button onClick={() => setOrders(getOrders())} className="text-xs font-semibold px-3 py-2 border rounded-xl" style={{ borderColor: "oklch(0.88 0.03 90)", color: "oklch(0.4 0 0)" }}>
+                Actualizar
+              </button>
+            </div>
+            {orders.length === 0 ? (
+              <div className="py-20 text-center rounded-2xl border" style={{ borderColor: "oklch(0.88 0.03 90)" }}>
+                <ShoppingBag size={36} className="mx-auto mb-3" style={{ color: "oklch(0.75 0 0)" }} />
+                <p className="text-sm font-semibold" style={{ color: "oklch(0.4 0 0)" }}>Sin pedidos todavia</p>
+                <p className="text-xs mt-1" style={{ color: "oklch(0.65 0 0)" }}>Los pedidos enviados desde la tienda apareceran aqui</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {orders.map((order) => (
+                  <div key={order.id} className="rounded-2xl border p-5" style={{ backgroundColor: "oklch(1 0 0)", borderColor: "oklch(0.88 0.03 90)" }}>
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div>
+                        <p className="text-sm font-extrabold tracking-wider" style={{ color: "oklch(0.2 0.02 270)" }}>{order.id}</p>
+                        <p className="text-xs mt-0.5" style={{ color: "oklch(0.55 0 0)" }}>{new Date(order.createdAt).toLocaleString("es-AR")}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={order.status}
+                          onChange={(e) => { updateOrderStatus(order.id, e.target.value as Order["status"]); setOrders(getOrders()) }}
+                          className="rounded-xl px-3 py-1.5 text-xs font-semibold border outline-none"
+                          style={inputStyle}
+                        >
+                          {["pendiente","confirmado","enviado","entregado","cancelado"].map((s) => (
+                            <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                          ))}
+                        </select>
+                        <button onClick={() => { deleteOrder(order.id); setOrders(getOrders()) }} className="p-1.5 rounded-lg" style={{ backgroundColor: "oklch(0.97 0.05 5)", color: "oklch(0.55 0.22 5)" }}>
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                      <div>
+                        <p className="font-bold mb-1" style={{ color: "oklch(0.4 0 0)" }}>Cliente</p>
+                        <p style={{ color: "oklch(0.2 0.02 270)" }}>{order.nombre}</p>
+                        <p style={{ color: "oklch(0.55 0 0)" }}>{order.telefono}</p>
+                        {order.email && <p style={{ color: "oklch(0.55 0 0)" }}>{order.email}</p>}
+                      </div>
+                      <div>
+                        <p className="font-bold mb-1" style={{ color: "oklch(0.4 0 0)" }}>Productos</p>
+                        {order.items.map((item, i) => (
+                          <p key={i} style={{ color: "oklch(0.35 0 0)" }}>
+                            {item.name}{item.size ? ` T.${item.size}` : ""} x{item.quantity} — {formatPrice(item.price * item.quantity)}
+                          </p>
+                        ))}
+                      </div>
+                      <div>
+                        <p className="font-bold mb-1" style={{ color: "oklch(0.4 0 0)" }}>Entrega</p>
+                        <p style={{ color: "oklch(0.35 0 0)" }}>{order.shippingType === "envio" ? `Envio: ${order.localidad ?? ""}, ${order.provincia ?? ""}` : "Retiro en Concordia"}</p>
+                        <p className="mt-1 font-bold" style={{ color: "oklch(0.38 0.12 248)" }}>{formatPrice(order.total)}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════════════════
+            TAB: METRICAS
+        ══════════════════════════════════════════════════════════════════════ */}
+        {activeTab === "metrics" && (() => {
+          const completedOrders = orders.filter(o => o.status !== "cancelado")
+          const totalRevenue = completedOrders.reduce((sum, o) => sum + o.total, 0)
+          const avgOrder = completedOrders.length > 0 ? totalRevenue / completedOrders.length : 0
+          const productCounts: Record<string, number> = {}
+          completedOrders.forEach(o => o.items.forEach(item => {
+            productCounts[item.name] = (productCounts[item.name] ?? 0) + item.quantity
+          }))
+          const topProducts = Object.entries(productCounts).sort((a, b) => b[1] - a[1]).slice(0, 5)
+          return (
+            <div className="flex flex-col gap-8">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[
+                  { label: "Pedidos totales", value: orders.length, color: "oklch(0.38 0.12 248)" },
+                  { label: "Pedidos activos", value: completedOrders.length, color: "oklch(0.62 0.18 145)" },
+                  { label: "Ingresos estimados", value: formatPrice(totalRevenue), color: "oklch(0.72 0.2 50)" },
+                  { label: "Ticket promedio", value: formatPrice(avgOrder), color: "oklch(0.6 0.22 5)" },
+                ].map(({ label, value, color }) => (
+                  <div key={label} className="rounded-2xl p-5 border" style={{ backgroundColor: "oklch(1 0 0)", borderColor: "oklch(0.88 0.03 90)" }}>
+                    <p className="text-xl font-extrabold" style={{ color }}>{value}</p>
+                    <p className="text-xs mt-1" style={{ color: "oklch(0.55 0 0)" }}>{label}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="rounded-2xl border p-5" style={{ backgroundColor: "oklch(1 0 0)", borderColor: "oklch(0.88 0.03 90)" }}>
+                <p className="text-sm font-bold mb-4" style={{ color: "oklch(0.2 0.02 270)" }}>Productos mas vendidos</p>
+                {topProducts.length === 0 ? (
+                  <p className="text-xs" style={{ color: "oklch(0.55 0 0)" }}>Sin datos todavia. Los pedidos completados apareceran aqui.</p>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {topProducts.map(([name, qty], i) => (
+                      <div key={name} className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs font-black w-5 text-right" style={{ color: "oklch(0.7 0 0)" }}>#{i + 1}</span>
+                          <span className="text-sm font-medium" style={{ color: "oklch(0.2 0.02 270)" }}>{name}</span>
+                        </div>
+                        <span className="text-sm font-bold" style={{ color: "oklch(0.38 0.12 248)" }}>{qty} ud.</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="rounded-2xl border p-5" style={{ backgroundColor: "oklch(1 0 0)", borderColor: "oklch(0.88 0.03 90)" }}>
+                <p className="text-sm font-bold mb-4" style={{ color: "oklch(0.2 0.02 270)" }}>Estado de pedidos</p>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  {["pendiente","confirmado","enviado","entregado","cancelado"].map((status) => {
+                    const count = orders.filter(o => o.status === status).length
+                    return (
+                      <div key={status} className="text-center rounded-xl p-3 border" style={{ borderColor: "oklch(0.88 0.03 90)" }}>
+                        <p className="text-2xl font-extrabold" style={{ color: "oklch(0.38 0.12 248)" }}>{count}</p>
+                        <p className="text-xs mt-0.5 capitalize" style={{ color: "oklch(0.55 0 0)" }}>{status}</p>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          )
+        })()}
+
+        {/* ══════════════════════════════════════════════════════════════════════
             TAB: MAYORISTAS
         ══════════════════════════════════════════════════════════════════════ */}
         {activeTab === "wholesale" && (
@@ -636,6 +777,7 @@ interface ProductFormProps {
 function ProductForm({ form, setForm, categories, isNew, onSave, onCancel }: ProductFormProps) {
   const [colorInput, setColorInput] = useState("")
   const [featureInput, setFeatureInput] = useState("")
+  const [sizeInput, setSizeInput] = useState("")
 
   const f = (key: keyof typeof form, value: unknown) => setForm({ ...form, [key]: value })
 
@@ -646,6 +788,16 @@ function ProductForm({ form, setForm, categories, isNew, onSave, onCancel }: Pro
       setColorInput("")
     }
   }
+
+  const addSize = () => {
+    const v = sizeInput.trim()
+    if (v && !(form.sizes ?? []).includes(v)) {
+      f("sizes", [...(form.sizes ?? []), v])
+      setSizeInput("")
+    }
+  }
+
+  const removeSize = (s: string) => f("sizes", (form.sizes ?? []).filter((x) => x !== s))
 
   const removeColor = (c: string) => f("colors", (form.colors ?? []).filter((x) => x !== c))
 
@@ -807,8 +959,41 @@ function ProductForm({ form, setForm, categories, isNew, onSave, onCancel }: Pro
           )}
         </div>
 
+        {/* Talles disponibles */}
+        <div className="flex flex-col gap-2 md:col-span-2">
+          <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: "oklch(0.4 0.03 270)" }}>Talles disponibles</label>
+          <div className="flex gap-2">
+            <input type="text" value={sizeInput} onChange={(e) => setSizeInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addSize())}
+              placeholder="Ej: 36, 37, 38..." className={inputClass} style={inputStyle} />
+            <button onClick={addSize} type="button"
+              className="flex items-center gap-1 rounded-xl px-4 py-2 text-sm font-semibold flex-shrink-0"
+              style={{ backgroundColor: "oklch(0.38 0.12 248)", color: "oklch(1 0 0)" }}>
+              <Plus size={14} /> Agregar
+            </button>
+          </div>
+          {(form.sizes ?? []).length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {(form.sizes ?? []).map((s) => (
+                <span key={s} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border"
+                  style={{ borderColor: "oklch(0.88 0.03 90)", color: "oklch(0.2 0.02 270)", backgroundColor: "oklch(0.97 0 0)" }}>
+                  {s}
+                  <button onClick={() => removeSize(s)} type="button"><X size={11} /></button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Stock */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: "oklch(0.4 0.03 270)" }}>Stock (-1 = encargo puro)</label>
+          <input type="number" min={-1} value={form.stock ?? 10} onChange={(e) => f("stock", Number(e.target.value))}
+            className={inputClass} style={inputStyle} />
+        </div>
+
         {/* Destacado */}
-        <div className="flex items-center gap-3 md:col-span-2">
+        <div className="flex items-center gap-3">
           <button type="button" onClick={() => f("featured", !form.featured)}
             className="relative w-11 h-6 rounded-full transition-all"
             style={{ backgroundColor: form.featured ? "oklch(0.72 0.2 50)" : "oklch(0.82 0 0)" }}>
@@ -816,6 +1001,17 @@ function ProductForm({ form, setForm, categories, isNew, onSave, onCancel }: Pro
               style={{ left: form.featured ? "calc(100% - 22px)" : "2px", backgroundColor: "oklch(1 0 0)", boxShadow: "0 1px 3px oklch(0 0 0 / 0.2)" }} />
           </button>
           <label className="text-sm font-medium" style={{ color: "oklch(0.35 0.02 270)" }}>Producto destacado</label>
+        </div>
+
+        {/* Es encargo */}
+        <div className="flex items-center gap-3">
+          <button type="button" onClick={() => f("isEncargo", !form.isEncargo)}
+            className="relative w-11 h-6 rounded-full transition-all"
+            style={{ backgroundColor: form.isEncargo ? "oklch(0.6 0.22 5)" : "oklch(0.82 0 0)" }}>
+            <span className="absolute top-0.5 w-5 h-5 rounded-full transition-all"
+              style={{ left: form.isEncargo ? "calc(100% - 22px)" : "2px", backgroundColor: "oklch(1 0 0)", boxShadow: "0 1px 3px oklch(0 0 0 / 0.2)" }} />
+          </button>
+          <label className="text-sm font-medium" style={{ color: "oklch(0.35 0.02 270)" }}>Solo por encargo</label>
         </div>
       </div>
 

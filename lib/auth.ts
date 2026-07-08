@@ -1,7 +1,7 @@
 // Credenciales del administrador
-const ADMIN_USER = "CIENFUEGOSO325"
-const ADMIN_PASSWORD = "CIENFUEGOSO325"
-const AUTH_KEY = "cc_admin_session"
+const ADMIN_USER = "SANTADIABLA.2026"
+const ADMIN_PASSWORD = "SANTADIABLA.2026"
+const AUTH_KEY = "sd_admin_session"
 
 function isBrowser(): boolean {
   return typeof window !== "undefined"

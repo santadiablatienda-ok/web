@@ -3,20 +3,21 @@
 import { useState } from "react"
 import {
   X, Trash2, Plus, Minus, ShoppingBag, MessageCircle,
-  ArrowRight, ArrowLeft, User, MapPin, Package, CheckCircle2,
+  ArrowRight, ArrowLeft, User, Package, CheckCircle2,
   Truck, Store, CreditCard, Banknote, Building2, Wallet, Hash
 } from "lucide-react"
 import { type CartItem } from "@/hooks/use-cart"
 import { formatPrice } from "@/lib/products"
 import { ShippingCalculator } from "@/components/shipping-calculator"
+import { saveOrder, type Order } from "@/lib/orders-store"
 
 interface CartDrawerProps {
   open: boolean
   onClose: () => void
   items: CartItem[]
   totalPrice: number
-  onUpdateQuantity: (id: string, qty: number) => void
-  onRemove: (id: string) => void
+  onUpdateQuantity: (id: string, qty: number, size?: string) => void
+  onRemove: (id: string, size?: string) => void
   onClear: () => void
 }
 
@@ -52,14 +53,9 @@ const PAYMENT_ICONS: Record<PaymentType, React.ReactNode> = {
 }
 
 const defaultForm: OrderForm = {
-  nombre: "",
-  telefono: "",
-  email: "",
+  nombre: "", telefono: "", email: "",
   shippingType: "envio",
-  direccion: "",
-  localidad: "",
-  provincia: "",
-  codigoPostal: "",
+  direccion: "", localidad: "", provincia: "", codigoPostal: "",
   paymentType: "transferencia",
   nota: "",
 }
@@ -68,17 +64,18 @@ function generateOrderId() {
   const now = new Date()
   const date = `${String(now.getDate()).padStart(2, "0")}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getFullYear()).slice(2)}`
   const rand = Math.floor(1000 + Math.random() * 9000)
-  return `CC-${date}-${rand}`
+  return `SD-${date}-${rand}`
 }
 
+const accent = "#000"
+const accentLight = "#F5F5F5"
+const border = "#E0E0E0"
+const textPrimary = "#000"
+const textSecondary = "#5C5C5C"
+const textMuted = "#9E9E9E"
+
 export function CartDrawer({
-  open,
-  onClose,
-  items,
-  totalPrice,
-  onUpdateQuantity,
-  onRemove,
-  onClear,
+  open, onClose, items, totalPrice, onUpdateQuantity, onRemove, onClear,
 }: CartDrawerProps) {
   const [step, setStep] = useState<Step>("cart")
   const [form, setForm] = useState<OrderForm>(defaultForm)
@@ -88,8 +85,7 @@ export function CartDrawer({
   const [shippingProvincia, setShippingProvincia] = useState("")
 
   const totalItems = items.reduce((s, i) => s + i.quantity, 0)
-  // Peso estimado: 0.3kg base + 0.2kg por item
-  const estimatedWeight = Math.max(0.5, totalItems * 0.2 + 0.3)
+  const estimatedWeight = Math.max(0.5, totalItems * 0.5 + 0.3)
   const totalWithShipping = totalPrice + shippingCost
 
   function handleClose() {
@@ -124,45 +120,74 @@ export function CartDrawer({
 
   function buildWhatsAppMessage(): string {
     const productLines = items
-      .map((i) => `  • ${i.product.name} x${i.quantity}  →  ${formatPrice(i.product.price * i.quantity)}`)
+      .map((i) => {
+        const size = i.selectedSize ? ` (Talle: ${i.selectedSize})` : ""
+        return `  - ${i.product.name}${size} x${i.quantity}  ${formatPrice(i.product.price * i.quantity)}`
+      })
       .join("\n")
 
     const shipping =
       form.shippingType === "envio"
-        ? `Envio a domicilio\n  ${form.direccion}, ${form.localidad}, ${form.provincia}${form.codigoPostal ? ` (CP ${form.codigoPostal})` : ""}`
-        : "Retiro en local — San Lorenzo Oeste 325, Concordia"
+        ? `Envio a domicilio\n  ${form.direccion}, ${form.localidad}, ${form.provincia}${form.codigoPostal ? ` CP ${form.codigoPostal}` : ""}`
+        : "Retiro coordinado en Concordia"
 
     const lines = [
-      `*Nuevo pedido #${orderId}*`,
+      `Nuevo pedido #${orderId}`,
       ``,
-      `*Cliente*`,
+      `Cliente`,
       `  Nombre: ${form.nombre}`,
       `  Telefono: ${form.telefono}`,
       form.email ? `  Email: ${form.email}` : null,
       ``,
-      `*Productos*`,
+      `Productos`,
       productLines,
       ``,
-      `*Subtotal: ${formatPrice(totalPrice)}*`,
-      shippingCost > 0 ? `*Envio estimado: ${formatPrice(shippingCost)}*` : null,
-      `*Total: ${formatPrice(totalWithShipping)}*`,
+      `Subtotal: ${formatPrice(totalPrice)}`,
+      shippingCost > 0 ? `Envio estimado: ${formatPrice(shippingCost)}` : null,
+      `Total: ${formatPrice(totalWithShipping)}`,
       ``,
-      `*Entrega*`,
+      `Entrega`,
       `  ${shipping}`,
       ``,
-      `*Forma de pago*`,
+      `Forma de pago`,
       `  ${PAYMENT_LABELS[form.paymentType]}`,
-      form.nota.trim() ? `\n*Nota del cliente*\n  ${form.nota}` : null,
+      form.nota.trim() ? `\nNota: ${form.nota}` : null,
       ``,
-      `_Pedido enviado desde la tienda online_`,
+      `Pedido enviado desde santadiabla.com`,
     ]
 
     return lines.filter((l) => l !== null).join("\n")
   }
 
-  const whatsappUrl = `https://wa.me/5493454289474?text=${encodeURIComponent(buildWhatsAppMessage())}`
+  function handleSendOrder() {
+    const order: Order = {
+      id: orderId,
+      createdAt: new Date().toISOString(),
+      nombre: form.nombre,
+      telefono: form.telefono,
+      email: form.email || undefined,
+      items: items.map((i) => ({
+        name: i.product.name,
+        size: i.selectedSize,
+        quantity: i.quantity,
+        price: i.product.price,
+      })),
+      total: totalWithShipping,
+      shippingType: form.shippingType,
+      direccion: form.shippingType === "envio" ? form.direccion : undefined,
+      localidad: form.shippingType === "envio" ? form.localidad : undefined,
+      provincia: form.shippingType === "envio" ? form.provincia : undefined,
+      paymentType: PAYMENT_LABELS[form.paymentType],
+      nota: form.nota || undefined,
+      status: "pendiente",
+    }
+    saveOrder(order)
+    onClear()
+    setStep("sent")
+  }
 
-  // ─── STEP INDICATORS ────────────────────────────────────────────────────────
+  const whatsappUrl = `https://wa.me/5493456623935?text=${encodeURIComponent(buildWhatsAppMessage())}`
+
   const steps: { id: Step; label: string }[] = [
     { id: "cart", label: "Carrito" },
     { id: "form", label: "Tus datos" },
@@ -174,7 +199,7 @@ export function CartDrawer({
     <>
       {open && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-40 bg-black/60"
           onClick={handleClose}
           aria-hidden="true"
         />
@@ -185,24 +210,24 @@ export function CartDrawer({
         aria-modal="true"
         aria-label="Carrito de compras"
         className={`fixed top-0 right-0 z-50 h-full w-full max-w-sm flex flex-col shadow-2xl transition-transform duration-300 ${open ? "translate-x-0" : "translate-x-full"}`}
-        style={{ backgroundColor: "oklch(0.98 0.01 90)" }}
+        style={{ backgroundColor: "#fff" }}
       >
-        {/* ── HEADER ── */}
+        {/* Header */}
         <div
           className="flex items-center justify-between px-5 py-4 border-b shrink-0"
-          style={{ borderColor: "oklch(0.88 0.03 90)", backgroundColor: "oklch(1 0 0)" }}
+          style={{ borderColor: border }}
         >
           <div className="flex items-center gap-2">
-            <ShoppingBag size={20} style={{ color: "oklch(0.6 0.22 5)" }} />
-            <h2 className="text-base font-bold" style={{ color: "oklch(0.2 0.02 270)" }}>
+            <ShoppingBag size={18} style={{ color: textPrimary }} />
+            <h2 className="text-sm font-black uppercase tracking-wider" style={{ color: textPrimary, letterSpacing: "0.08em" }}>
               {step === "cart" && "Mi carrito"}
               {step === "form" && "Datos del pedido"}
               {step === "confirm" && "Confirmar pedido"}
             </h2>
             {step === "cart" && items.length > 0 && (
               <span
-                className="rounded-full px-2 py-0.5 text-xs font-bold"
-                style={{ backgroundColor: "oklch(0.6 0.22 5)", color: "oklch(1 0 0)" }}
+                className="rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold"
+                style={{ backgroundColor: "#000", color: "#fff" }}
               >
                 {totalItems}
               </span>
@@ -212,16 +237,16 @@ export function CartDrawer({
             {step === "cart" && items.length > 0 && (
               <button
                 onClick={onClear}
-                className="text-xs font-medium transition-opacity hover:opacity-70"
-                style={{ color: "oklch(0.55 0.03 270)" }}
+                className="text-xs font-semibold transition-opacity hover:opacity-50"
+                style={{ color: textMuted }}
               >
                 Vaciar
               </button>
             )}
             <button
               onClick={handleClose}
-              className="rounded-lg p-1.5 transition-colors hover:bg-muted"
-              style={{ color: "oklch(0.4 0.03 270)" }}
+              className="p-1.5 transition-opacity hover:opacity-50"
+              style={{ color: textPrimary }}
               aria-label="Cerrar carrito"
             >
               <X size={18} />
@@ -229,37 +254,29 @@ export function CartDrawer({
           </div>
         </div>
 
-        {/* ── STEP INDICATOR ── */}
+        {/* Step indicator */}
         {items.length > 0 && step !== "sent" && (
-          <div
-            className="flex items-center px-5 py-3 gap-0 shrink-0 border-b"
-            style={{ borderColor: "oklch(0.88 0.03 90)", backgroundColor: "oklch(1 0 0)" }}
-          >
+          <div className="flex items-center px-5 py-3 gap-0 shrink-0 border-b" style={{ borderColor: border }}>
             {steps.map((s, idx) => (
               <div key={s.id} className="flex items-center flex-1">
                 <div className="flex flex-col items-center gap-1 flex-1">
                   <div
-                    className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all"
+                    className="w-6 h-6 flex items-center justify-center text-xs font-bold transition-all"
                     style={{
-                      backgroundColor: idx <= stepIndex ? "oklch(0.6 0.22 5)" : "oklch(0.88 0.03 90)",
-                      color: idx <= stepIndex ? "oklch(1 0 0)" : "oklch(0.5 0 0)",
+                      backgroundColor: idx <= stepIndex ? "#000" : "#E0E0E0",
+                      color: idx <= stepIndex ? "#fff" : "#9E9E9E",
                     }}
                   >
-                    {idx < stepIndex ? <CheckCircle2 size={14} /> : idx + 1}
+                    {idx < stepIndex ? <CheckCircle2 size={13} /> : idx + 1}
                   </div>
-                  <span
-                    className="text-xs font-medium"
-                    style={{ color: idx <= stepIndex ? "oklch(0.6 0.22 5)" : "oklch(0.6 0 0)" }}
-                  >
+                  <span className="text-xs font-medium" style={{ color: idx <= stepIndex ? "#000" : textMuted }}>
                     {s.label}
                   </span>
                 </div>
                 {idx < steps.length - 1 && (
                   <div
                     className="h-0.5 flex-1 mb-4 mx-1 rounded transition-all"
-                    style={{
-                      backgroundColor: idx < stepIndex ? "oklch(0.6 0.22 5)" : "oklch(0.88 0.03 90)",
-                    }}
+                    style={{ backgroundColor: idx < stepIndex ? "#000" : "#E0E0E0" }}
                   />
                 )}
               </div>
@@ -267,84 +284,88 @@ export function CartDrawer({
           </div>
         )}
 
-        {/* ── BODY ── */}
-        <div className="flex-1 overflow-y-auto">
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto" style={{ backgroundColor: "#F5F5F5" }}>
 
           {/* STEP 1: CARRITO */}
           {step === "cart" && (
             <div className="px-4 py-4">
               {items.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-64 gap-3 text-center">
-                  <div className="rounded-full p-5" style={{ backgroundColor: "oklch(0.6 0.22 5 / 0.08)" }}>
-                    <ShoppingBag size={32} style={{ color: "oklch(0.6 0.22 5)" }} />
-                  </div>
-                  <p className="font-semibold" style={{ color: "oklch(0.3 0.02 270)" }}>Tu carrito esta vacio</p>
-                  <p className="text-sm" style={{ color: "oklch(0.55 0.03 270)" }}>Agrega productos desde el catalogo</p>
+                <div className="flex flex-col items-center justify-center h-64 gap-4 text-center">
+                  <ShoppingBag size={36} style={{ color: "#E0E0E0" }} />
+                  <p className="font-bold text-sm" style={{ color: textPrimary }}>Tu carrito esta vacio</p>
+                  <p className="text-xs" style={{ color: textMuted }}>Agrega productos desde el catalogo</p>
                   <button
                     onClick={handleClose}
-                    className="mt-2 rounded-full px-5 py-2 text-sm font-semibold transition-all hover:scale-105"
-                    style={{ backgroundColor: "oklch(0.6 0.22 5)", color: "oklch(1 0 0)" }}
+                    className="mt-2 px-6 py-2.5 text-xs font-bold uppercase tracking-widest transition-opacity hover:opacity-70"
+                    style={{ backgroundColor: "#000", color: "#fff", letterSpacing: "0.1em" }}
                   >
                     Ver productos
                   </button>
                 </div>
               ) : (
                 <ul className="flex flex-col gap-3">
-                  {items.map(({ product, quantity }) => (
+                  {items.map(({ product, quantity, selectedSize }) => (
                     <li
-                      key={product.id}
-                      className="flex gap-3 rounded-2xl p-3"
-                      style={{ backgroundColor: "oklch(1 0 0)" }}
+                      key={`${product.id}-${selectedSize || ""}`}
+                      className="flex gap-3 p-3"
+                      style={{ backgroundColor: "#fff", border: "1px solid #E0E0E0" }}
                     >
                       <img
                         src={product.image}
                         alt={product.imageAlt}
-                        className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
+                        className="w-16 h-16 object-cover flex-shrink-0"
+                        style={{ backgroundColor: "#F5F5F5" }}
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold leading-snug truncate" style={{ color: "oklch(0.2 0.02 270)" }}>
+                        <p className="text-xs font-bold leading-snug" style={{ color: textPrimary }}>
                           {product.name}
                         </p>
-                        <p className="text-xs mt-0.5" style={{ color: "oklch(0.55 0.03 270)" }}>
+                        {selectedSize && (
+                          <p className="text-xs font-semibold mt-0.5" style={{ color: textMuted }}>
+                            Talle: {selectedSize}
+                          </p>
+                        )}
+                        <p className="text-xs mt-0.5" style={{ color: textMuted }}>
                           {formatPrice(product.price)} c/u
                         </p>
                         <div className="flex items-center justify-between mt-2">
                           <div
-                            className="flex items-center rounded-lg overflow-hidden border"
-                            style={{ borderColor: "oklch(0.88 0.03 90)" }}
+                            className="flex items-center overflow-hidden border"
+                            style={{ borderColor: "#E0E0E0" }}
                           >
                             <button
-                              onClick={() => onUpdateQuantity(product.id, quantity - 1)}
+                              onClick={() => onUpdateQuantity(product.id, quantity - 1, selectedSize)}
                               disabled={quantity <= 1}
-                              className="px-2 py-1 transition-colors disabled:opacity-40 hover:bg-muted"
-                              style={{ color: "oklch(0.3 0.02 270)" }}
-                              aria-label="Reducir cantidad"
+                              className="px-2 py-1 transition-opacity disabled:opacity-30 hover:bg-gray-50"
+                              style={{ color: textPrimary }}
+                              aria-label="Reducir"
                             >
                               <Minus size={12} />
                             </button>
                             <span
                               className="px-3 py-1 text-xs font-bold border-x"
-                              style={{ borderColor: "oklch(0.88 0.03 90)", color: "oklch(0.2 0.02 270)" }}
+                              style={{ borderColor: "#E0E0E0", color: textPrimary }}
                             >
                               {quantity}
                             </span>
                             <button
-                              onClick={() => onUpdateQuantity(product.id, quantity + 1)}
-                              className="px-2 py-1 transition-colors hover:bg-muted"
-                              style={{ color: "oklch(0.3 0.02 270)" }}
-                              aria-label="Aumentar cantidad"
+                              onClick={() => onUpdateQuantity(product.id, quantity + 1, selectedSize)}
+                              className="px-2 py-1 transition-opacity hover:bg-gray-50"
+                              style={{ color: textPrimary }}
+                              aria-label="Aumentar"
                             >
                               <Plus size={12} />
                             </button>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-bold" style={{ color: "oklch(0.2 0.02 270)" }}>
+                            <span className="text-sm font-black" style={{ color: textPrimary }}>
                               {formatPrice(product.price * quantity)}
                             </span>
                             <button
-                              onClick={() => onRemove(product.id)}
-                              className="rounded-lg p-1 transition-colors hover:bg-red-50"
-                              style={{ color: "oklch(0.577 0.245 27.325)" }}
+                              onClick={() => onRemove(product.id, selectedSize)}
+                              className="p-1 transition-opacity hover:opacity-50"
+                              style={{ color: "#E63946" }}
                               aria-label={`Eliminar ${product.name}`}
                             >
                               <Trash2 size={14} />
@@ -362,44 +383,22 @@ export function CartDrawer({
           {/* STEP 2: FORMULARIO */}
           {step === "form" && (
             <div className="px-4 py-4 flex flex-col gap-5">
-
-              {/* Datos personales */}
               <section className="flex flex-col gap-3">
                 <div className="flex items-center gap-2">
-                  <User size={14} style={{ color: "oklch(0.6 0.22 5)" }} />
-                  <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "oklch(0.6 0.22 5)" }}>
+                  <User size={13} style={{ color: textPrimary }} />
+                  <p className="text-xs font-bold uppercase tracking-wider" style={{ color: textPrimary, letterSpacing: "0.1em" }}>
                     Datos personales
                   </p>
                 </div>
-                <FormField
-                  label="Nombre completo *"
-                  value={form.nombre}
-                  onChange={(v) => setField("nombre", v)}
-                  placeholder="Ej: Maria Gonzalez"
-                  error={errors.nombre}
-                />
-                <FormField
-                  label="Telefono / WhatsApp *"
-                  value={form.telefono}
-                  onChange={(v) => setField("telefono", v)}
-                  placeholder="Ej: 345 412-3456"
-                  type="tel"
-                  error={errors.telefono}
-                />
-                <FormField
-                  label="Email (opcional)"
-                  value={form.email}
-                  onChange={(v) => setField("email", v)}
-                  placeholder="tu@email.com"
-                  type="email"
-                />
+                <FormField label="Nombre completo *" value={form.nombre} onChange={(v) => setField("nombre", v)} placeholder="Nombre y apellido" error={errors.nombre} />
+                <FormField label="Telefono / WhatsApp *" value={form.telefono} onChange={(v) => setField("telefono", v)} placeholder="345 412-3456" type="tel" error={errors.telefono} />
+                <FormField label="Email (opcional)" value={form.email} onChange={(v) => setField("email", v)} placeholder="tu@email.com" type="email" />
               </section>
 
-              {/* Entrega */}
               <section className="flex flex-col gap-3">
                 <div className="flex items-center gap-2">
-                  <Package size={14} style={{ color: "oklch(0.6 0.22 5)" }} />
-                  <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "oklch(0.6 0.22 5)" }}>
+                  <Package size={13} style={{ color: textPrimary }} />
+                  <p className="text-xs font-bold uppercase tracking-wider" style={{ color: textPrimary, letterSpacing: "0.1em" }}>
                     Tipo de entrega
                   </p>
                 </div>
@@ -409,67 +408,37 @@ export function CartDrawer({
                       key={type}
                       type="button"
                       onClick={() => setField("shippingType", type)}
-                      className="flex flex-col items-center gap-1.5 rounded-xl p-3 border-2 transition-all text-xs font-semibold"
+                      className="flex flex-col items-center gap-1.5 p-3 border-2 text-xs font-bold uppercase tracking-wider transition-all"
                       style={{
-                        borderColor: form.shippingType === type ? "oklch(0.6 0.22 5)" : "oklch(0.88 0.03 90)",
-                        backgroundColor: form.shippingType === type ? "oklch(0.6 0.22 5 / 0.07)" : "oklch(1 0 0)",
-                        color: form.shippingType === type ? "oklch(0.6 0.22 5)" : "oklch(0.4 0 0)",
+                        borderColor: form.shippingType === type ? "#000" : "#E0E0E0",
+                        backgroundColor: form.shippingType === type ? "#000" : "#fff",
+                        color: form.shippingType === type ? "#fff" : "#5C5C5C",
+                        letterSpacing: "0.06em",
                       }}
                     >
-                      {type === "envio" ? <Truck size={18} /> : <Store size={18} />}
-                      {type === "envio" ? "Envio a domicilio" : "Retiro en local"}
+                      {type === "envio" ? <Truck size={16} /> : <Store size={16} />}
+                      {type === "envio" ? "Envio a domicilio" : "Retiro"}
                     </button>
                   ))}
                 </div>
 
                 {form.shippingType === "envio" && (
-                  <div className="flex flex-col gap-2.5 rounded-xl p-3 border" style={{ borderColor: "oklch(0.88 0.03 90)", backgroundColor: "oklch(1 0 0)" }}>
-                    <FormField
-                      label="Direccion *"
-                      value={form.direccion}
-                      onChange={(v) => setField("direccion", v)}
-                      placeholder="Calle y numero"
-                      error={errors.direccion}
-                    />
+                  <div className="flex flex-col gap-2.5 p-3 border" style={{ borderColor: "#E0E0E0", backgroundColor: "#fff" }}>
+                    <FormField label="Direccion *" value={form.direccion} onChange={(v) => setField("direccion", v)} placeholder="Calle y numero" error={errors.direccion} />
                     <div className="grid grid-cols-2 gap-2">
-                      <FormField
-                        label="Localidad *"
-                        value={form.localidad}
-                        onChange={(v) => setField("localidad", v)}
-                        placeholder="Ciudad"
-                        error={errors.localidad}
-                      />
-                      <FormField
-                        label="CP"
-                        value={form.codigoPostal}
-                        onChange={(v) => setField("codigoPostal", v)}
-                        placeholder="3200"
-                      />
+                      <FormField label="Localidad *" value={form.localidad} onChange={(v) => setField("localidad", v)} placeholder="Ciudad" error={errors.localidad} />
+                      <FormField label="CP" value={form.codigoPostal} onChange={(v) => setField("codigoPostal", v)} placeholder="3200" />
                     </div>
-                    <FormField
-                      label="Provincia *"
-                      value={form.provincia}
-                      onChange={(v) => setField("provincia", v)}
-                      placeholder="Entre Rios"
-                      error={errors.provincia}
-                    />
+                    <FormField label="Provincia *" value={form.provincia} onChange={(v) => setField("provincia", v)} placeholder="Entre Rios" error={errors.provincia} />
                   </div>
                 )}
 
                 {form.shippingType === "retiro" && (
-                  <div
-                    className="rounded-xl p-3 text-xs leading-relaxed border flex items-start gap-2"
-                    style={{ borderColor: "oklch(0.62 0.18 145 / 0.3)", backgroundColor: "oklch(0.62 0.18 145 / 0.07)", color: "oklch(0.35 0 0)" }}
-                  >
-                    <MapPin size={14} className="mt-0.5 shrink-0" style={{ color: "oklch(0.62 0.18 145)" }} />
-                    <span>
-                      <strong>San Lorenzo Oeste 325</strong>, Concordia, Entre Rios.<br />
-                      Lun–Sab: 09:00–13:00 y 16:30–20:30
-                    </span>
+                  <div className="p-3 text-xs leading-relaxed border" style={{ borderColor: "#E0E0E0", backgroundColor: "#fff", color: textSecondary }}>
+                    Coordinaremos el punto de retiro en Concordia, Entre Rios por WhatsApp.
                   </div>
                 )}
 
-                {/* Calculador de envío — solo si elige envío */}
                 {form.shippingType === "envio" && (
                   <ShippingCalculator
                     totalWeight={estimatedWeight}
@@ -484,11 +453,10 @@ export function CartDrawer({
                 )}
               </section>
 
-              {/* Metodo de pago */}
               <section className="flex flex-col gap-3">
                 <div className="flex items-center gap-2">
-                  <CreditCard size={14} style={{ color: "oklch(0.6 0.22 5)" }} />
-                  <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "oklch(0.6 0.22 5)" }}>
+                  <CreditCard size={13} style={{ color: textPrimary }} />
+                  <p className="text-xs font-bold uppercase tracking-wider" style={{ color: textPrimary, letterSpacing: "0.1em" }}>
                     Forma de pago
                   </p>
                 </div>
@@ -498,11 +466,11 @@ export function CartDrawer({
                       key={type}
                       type="button"
                       onClick={() => setField("paymentType", type)}
-                      className="flex items-center gap-2 rounded-xl px-3 py-2.5 border-2 transition-all text-xs font-semibold text-left"
+                      className="flex items-center gap-2 px-3 py-2.5 border-2 text-xs font-semibold text-left transition-all"
                       style={{
-                        borderColor: form.paymentType === type ? "oklch(0.6 0.22 5)" : "oklch(0.88 0.03 90)",
-                        backgroundColor: form.paymentType === type ? "oklch(0.6 0.22 5 / 0.07)" : "oklch(1 0 0)",
-                        color: form.paymentType === type ? "oklch(0.6 0.22 5)" : "oklch(0.4 0 0)",
+                        borderColor: form.paymentType === type ? "#000" : "#E0E0E0",
+                        backgroundColor: form.paymentType === type ? "#000" : "#fff",
+                        color: form.paymentType === type ? "#fff" : "#5C5C5C",
                       }}
                     >
                       {PAYMENT_ICONS[type]}
@@ -512,80 +480,64 @@ export function CartDrawer({
                 </div>
               </section>
 
-              {/* Nota */}
               <section className="flex flex-col gap-2">
-                <label className="text-xs font-semibold" style={{ color: "oklch(0.4 0 0)" }}>
+                <label className="text-xs font-semibold" style={{ color: textSecondary }}>
                   Nota adicional (opcional)
                 </label>
                 <textarea
                   value={form.nota}
                   onChange={(e) => setField("nota", e.target.value)}
-                  placeholder="Ej: timbre 2do piso, horario preferido de entrega..."
+                  placeholder="Aclaracion sobre el pedido, horario preferido..."
                   rows={3}
-                  className="w-full rounded-xl border px-3 py-2 text-xs resize-none outline-none focus:ring-2 transition-all"
-                  style={{
-                    borderColor: "oklch(0.88 0.03 90)",
-                    backgroundColor: "oklch(1 0 0)",
-                    color: "oklch(0.2 0.02 270)",
-                  }}
+                  className="w-full border px-3 py-2 text-xs resize-none outline-none"
+                  style={{ borderColor: "#E0E0E0", backgroundColor: "#fff", color: textPrimary }}
                 />
               </section>
             </div>
           )}
 
-          {/* STEP 3: CONFIRMACION */}
+          {/* STEP 3: CONFIRMAR */}
           {step === "confirm" && (
             <div className="px-4 py-4 flex flex-col gap-4">
-
-              {/* Numero de pedido */}
-              <div
-                className="flex items-center gap-2 rounded-xl px-4 py-3 border"
-                style={{ backgroundColor: "oklch(0.6 0.22 5 / 0.07)", borderColor: "oklch(0.6 0.22 5 / 0.2)" }}
-              >
-                <Hash size={14} style={{ color: "oklch(0.6 0.22 5)" }} />
+              <div className="flex items-center gap-2 p-3 border" style={{ backgroundColor: "#fff", borderColor: "#E0E0E0" }}>
+                <Hash size={13} style={{ color: textMuted }} />
                 <div>
-                  <p className="text-xs" style={{ color: "oklch(0.5 0 0)" }}>Numero de pedido</p>
-                  <p className="text-sm font-extrabold tracking-wider" style={{ color: "oklch(0.6 0.22 5)" }}>{orderId}</p>
+                  <p className="text-xs" style={{ color: textMuted }}>Numero de pedido</p>
+                  <p className="text-sm font-black tracking-wider" style={{ color: textPrimary }}>{orderId}</p>
                 </div>
               </div>
 
-              {/* Productos */}
               <SummaryBlock title="Productos">
                 {items.map((i) => (
-                  <div key={i.product.id} className="flex justify-between text-xs">
-                    <span style={{ color: "oklch(0.35 0 0)" }}>
-                      {i.product.name} x{i.quantity}
+                  <div key={`${i.product.id}-${i.selectedSize || ""}`} className="flex justify-between text-xs">
+                    <span style={{ color: textSecondary }}>
+                      {i.product.name}{i.selectedSize ? ` (T. ${i.selectedSize})` : ""} x{i.quantity}
                     </span>
-                    <span className="font-semibold" style={{ color: "oklch(0.2 0.02 270)" }}>
+                    <span className="font-semibold" style={{ color: textPrimary }}>
                       {formatPrice(i.product.price * i.quantity)}
                     </span>
                   </div>
                 ))}
                 {shippingCost > 0 && (
                   <div className="flex justify-between text-xs pt-1">
-                    <span style={{ color: "oklch(0.55 0 0)" }}>Envío ({shippingProvincia})</span>
-                    <span style={{ color: "oklch(0.38 0.12 248)" }}>{formatPrice(shippingCost)}</span>
+                    <span style={{ color: textMuted }}>Envio ({shippingProvincia})</span>
+                    <span style={{ color: textPrimary }}>{formatPrice(shippingCost)}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-sm font-bold pt-2 border-t mt-1" style={{ borderColor: "oklch(0.88 0.03 90)" }}>
-                  <span style={{ color: "oklch(0.2 0.02 270)" }}>Total</span>
-                  <span style={{ color: "oklch(0.6 0.22 5)" }}>{formatPrice(totalWithShipping)}</span>
+                <div className="flex justify-between text-sm font-black pt-2 border-t mt-1" style={{ borderColor: "#E0E0E0" }}>
+                  <span style={{ color: textPrimary }}>Total</span>
+                  <span style={{ color: textPrimary }}>{formatPrice(totalWithShipping)}</span>
                 </div>
               </SummaryBlock>
 
-              {/* Datos del cliente */}
               <SummaryBlock title="Cliente">
                 <SummaryRow label="Nombre" value={form.nombre} />
                 <SummaryRow label="Telefono" value={form.telefono} />
                 {form.email && <SummaryRow label="Email" value={form.email} />}
               </SummaryBlock>
 
-              {/* Entrega */}
               <SummaryBlock title="Entrega">
-                <SummaryRow
-                  label="Tipo"
-                  value={form.shippingType === "envio" ? "Envio a domicilio" : "Retiro en local"}
-                />
+                <SummaryRow label="Tipo" value={form.shippingType === "envio" ? "Envio a domicilio" : "Retiro en Concordia"} />
                 {form.shippingType === "envio" && (
                   <>
                     <SummaryRow label="Direccion" value={form.direccion} />
@@ -593,81 +545,50 @@ export function CartDrawer({
                     <SummaryRow label="Provincia" value={form.provincia} />
                   </>
                 )}
-                {form.shippingType === "retiro" && (
-                  <SummaryRow label="Direccion" value="San Lorenzo Oeste 325, Concordia" />
-                )}
               </SummaryBlock>
 
-              {/* Pago */}
               <SummaryBlock title="Forma de pago">
                 <SummaryRow label="Metodo" value={PAYMENT_LABELS[form.paymentType]} />
               </SummaryBlock>
 
               {form.nota && (
                 <SummaryBlock title="Nota">
-                  <p className="text-xs" style={{ color: "oklch(0.35 0 0)" }}>{form.nota}</p>
+                  <p className="text-xs" style={{ color: textSecondary }}>{form.nota}</p>
                 </SummaryBlock>
               )}
 
-              <p className="text-xs text-center leading-relaxed px-2" style={{ color: "oklch(0.55 0 0)" }}>
-                Al tocar <strong>Enviar pedido</strong> se abre WhatsApp con todos los datos listos. La tienda confirmara disponibilidad y coordinara el pago y envio.
+              <p className="text-xs text-center leading-relaxed px-2" style={{ color: textMuted }}>
+                Al tocar Enviar pedido se abre WhatsApp con todos los datos listos. Confirmaremos disponibilidad y coordinaremos el pago y envio.
               </p>
             </div>
           )}
 
           {/* STEP 4: ENVIADO */}
           {step === "sent" && (
-            <div className="flex flex-col items-center justify-center h-full px-6 py-10 gap-5 text-center">
-              <div
-                className="rounded-full p-5"
-                style={{ backgroundColor: "oklch(0.62 0.18 145 / 0.12)" }}
-              >
-                <CheckCircle2 size={48} style={{ color: "oklch(0.62 0.18 145)" }} />
+            <div className="flex flex-col items-center justify-center h-full px-6 py-10 gap-6 text-center">
+              <div className="w-16 h-16 flex items-center justify-center" style={{ backgroundColor: "#000" }}>
+                <CheckCircle2 size={32} style={{ color: "#fff" }} />
               </div>
-              <div className="flex flex-col gap-1">
-                <p className="text-lg font-extrabold" style={{ color: "oklch(0.2 0.02 270)" }}>
-                  Pedido enviado
+              <div>
+                <p className="text-lg font-black uppercase mb-2" style={{ color: textPrimary }}>Pedido enviado</p>
+                <p className="text-sm leading-relaxed" style={{ color: textSecondary }}>
+                  Tu pedido <strong>#{orderId}</strong> fue enviado por WhatsApp. Te confirmaremos disponibilidad y coordinaremos la entrega.
                 </p>
-                <p className="text-sm leading-relaxed" style={{ color: "oklch(0.5 0 0)" }}>
-                  Tu pedido <strong style={{ color: "oklch(0.6 0.22 5)" }}>#{orderId}</strong> fue enviado por WhatsApp.
-                  La tienda te va a confirmar la disponibilidad y coordinar la entrega.
-                </p>
-              </div>
-              <div
-                className="w-full rounded-2xl p-4 border flex flex-col gap-2 text-left"
-                style={{ borderColor: "oklch(0.88 0.03 90)", backgroundColor: "oklch(1 0 0)" }}
-              >
-                <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "oklch(0.6 0.22 5)" }}>
-                  Resumen del pedido
-                </p>
-                {items.map((i) => (
-                  <div key={i.product.id} className="flex justify-between text-xs">
-                    <span style={{ color: "oklch(0.4 0 0)" }}>{i.product.name} x{i.quantity}</span>
-                    <span className="font-semibold" style={{ color: "oklch(0.2 0.02 270)" }}>{formatPrice(i.product.price * i.quantity)}</span>
-                  </div>
-                ))}
-                <div
-                  className="flex justify-between text-sm font-bold pt-2 border-t mt-1"
-                  style={{ borderColor: "oklch(0.88 0.03 90)" }}
-                >
-                  <span style={{ color: "oklch(0.2 0.02 270)" }}>Total</span>
-                  <span style={{ color: "oklch(0.6 0.22 5)" }}>{formatPrice(totalPrice)}</span>
-                </div>
               </div>
               <div className="flex flex-col gap-2 w-full">
                 <a
-                  href={`https://www.instagram.com/cienfuegoscotillon_concordia/`}
+                  href="https://www.instagram.com/santadiablatienda/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 rounded-full py-2.5 text-sm font-semibold border transition-all hover:opacity-80"
-                  style={{ borderColor: "oklch(0.6 0.22 5)", color: "oklch(0.6 0.22 5)" }}
+                  className="flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-widest border transition-all hover:bg-black hover:text-white"
+                  style={{ borderColor: "#000", color: "#000", letterSpacing: "0.1em" }}
                 >
-                  Seguinos en Instagram
+                  Seguir en Instagram
                 </a>
                 <button
                   onClick={handleClose}
-                  className="rounded-full py-2.5 text-sm font-bold transition-all hover:scale-105"
-                  style={{ backgroundColor: "oklch(0.6 0.22 5)", color: "oklch(1 0 0)" }}
+                  className="py-3 text-xs font-bold uppercase tracking-widest transition-opacity hover:opacity-80"
+                  style={{ backgroundColor: "#000", color: "#fff", letterSpacing: "0.1em" }}
                 >
                   Cerrar
                 </button>
@@ -676,31 +597,25 @@ export function CartDrawer({
           )}
         </div>
 
-        {/* ── FOOTER / ACCIONES ── */}
+        {/* Footer / Acciones */}
         {items.length > 0 && step !== "sent" && (
           <div
             className="px-4 py-4 border-t flex flex-col gap-3 shrink-0"
-            style={{ borderColor: "oklch(0.88 0.03 90)", backgroundColor: "oklch(1 0 0)" }}
+            style={{ borderColor: border, backgroundColor: "#fff" }}
           >
-            {/* Total siempre visible */}
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold" style={{ color: "oklch(0.45 0.03 270)" }}>
-                Total:
-              </span>
-              <span className="text-xl font-extrabold" style={{ color: "oklch(0.2 0.02 270)" }}>
-                {formatPrice(totalPrice)}
-              </span>
+              <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: textMuted, letterSpacing: "0.1em" }}>Total</span>
+              <span className="text-xl font-black" style={{ color: textPrimary }}>{formatPrice(totalPrice)}</span>
             </div>
 
-            {/* Botones por paso */}
             {step === "cart" && (
               <button
                 onClick={() => setStep("form")}
-                className="flex items-center justify-center gap-2 rounded-full py-3 text-sm font-bold transition-all hover:scale-105 hover:shadow-lg"
-                style={{ backgroundColor: "oklch(0.6 0.22 5)", color: "oklch(1 0 0)" }}
+                className="flex items-center justify-center gap-2 py-3.5 text-xs font-bold uppercase tracking-widest transition-opacity hover:opacity-80"
+                style={{ backgroundColor: "#000", color: "#fff", letterSpacing: "0.1em" }}
               >
                 Continuar con el pedido
-                <ArrowRight size={16} />
+                <ArrowRight size={15} />
               </button>
             )}
 
@@ -708,21 +623,18 @@ export function CartDrawer({
               <div className="flex gap-2">
                 <button
                   onClick={() => setStep("cart")}
-                  className="flex items-center justify-center gap-1 rounded-full py-3 px-4 text-sm font-bold transition-all border hover:bg-muted"
-                  style={{ borderColor: "oklch(0.88 0.03 90)", color: "oklch(0.4 0 0)" }}
+                  className="flex items-center justify-center gap-1 py-3 px-4 text-xs font-bold border transition-opacity hover:opacity-60"
+                  style={{ borderColor: "#E0E0E0", color: textSecondary }}
                 >
-                  <ArrowLeft size={15} />
-                  Volver
+                  <ArrowLeft size={14} />
                 </button>
                 <button
-                  onClick={() => {
-                    if (validate()) setStep("confirm")
-                  }}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-full py-3 text-sm font-bold transition-all hover:scale-105 hover:shadow-lg"
-                  style={{ backgroundColor: "oklch(0.6 0.22 5)", color: "oklch(1 0 0)" }}
+                  onClick={() => { if (validate()) setStep("confirm") }}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-widest transition-opacity hover:opacity-80"
+                  style={{ backgroundColor: "#000", color: "#fff", letterSpacing: "0.1em" }}
                 >
                   Revisar pedido
-                  <ArrowRight size={16} />
+                  <ArrowRight size={14} />
                 </button>
               </div>
             )}
@@ -731,21 +643,20 @@ export function CartDrawer({
               <div className="flex gap-2">
                 <button
                   onClick={() => setStep("form")}
-                  className="flex items-center justify-center gap-1 rounded-full py-3 px-4 text-sm font-bold transition-all border hover:bg-muted"
-                  style={{ borderColor: "oklch(0.88 0.03 90)", color: "oklch(0.4 0 0)" }}
+                  className="flex items-center justify-center gap-1 py-3 px-4 text-xs font-bold border transition-opacity hover:opacity-60"
+                  style={{ borderColor: "#E0E0E0", color: textSecondary }}
                 >
-                  <ArrowLeft size={15} />
-                  Editar
+                  <ArrowLeft size={14} />
                 </button>
                 <a
                   href={whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  onClick={() => { onClear(); setStep("sent") }}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-full py-3 text-sm font-bold transition-all hover:scale-105 hover:shadow-lg"
-                  style={{ backgroundColor: "oklch(0.62 0.18 145)", color: "oklch(1 0 0)" }}
+                  onClick={handleSendOrder}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-widest transition-opacity hover:opacity-80"
+                  style={{ backgroundColor: "#25D366", color: "#fff", letterSpacing: "0.08em" }}
                 >
-                  <MessageCircle size={18} />
+                  <MessageCircle size={16} />
                   Enviar pedido
                 </a>
               </div>
@@ -757,53 +668,36 @@ export function CartDrawer({
   )
 }
 
-// ─── Helpers de UI ────────────────────────────────────────────────────────────
-
 function FormField({
-  label,
-  value,
-  onChange,
-  placeholder,
-  type = "text",
-  error,
+  label, value, onChange, placeholder, type = "text", error,
 }: {
-  label: string
-  value: string
-  onChange: (v: string) => void
-  placeholder?: string
-  type?: string
-  error?: string
+  label: string; value: string; onChange: (v: string) => void
+  placeholder?: string; type?: string; error?: string
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-xs font-semibold" style={{ color: "oklch(0.4 0 0)" }}>
-        {label}
-      </label>
+      <label className="text-xs font-semibold" style={{ color: "#5C5C5C" }}>{label}</label>
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-xl border px-3 py-2 text-xs outline-none focus:ring-2 transition-all"
+        className="w-full border px-3 py-2 text-xs outline-none transition-all focus:border-black"
         style={{
-          borderColor: error ? "oklch(0.577 0.245 27.325)" : "oklch(0.88 0.03 90)",
-          backgroundColor: "oklch(1 0 0)",
-          color: "oklch(0.2 0.02 270)",
+          borderColor: error ? "#E63946" : "#E0E0E0",
+          backgroundColor: "#fff",
+          color: "#000",
         }}
       />
-      {error && (
-        <p className="text-xs" style={{ color: "oklch(0.577 0.245 27.325)" }}>{error}</p>
-      )}
+      {error && <p className="text-xs font-semibold" style={{ color: "#E63946" }}>{error}</p>}
     </div>
   )
 }
 
 function SummaryBlock({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border p-3 flex flex-col gap-2" style={{ borderColor: "oklch(0.88 0.03 90)", backgroundColor: "oklch(1 0 0)" }}>
-      <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "oklch(0.6 0.22 5)" }}>
-        {title}
-      </p>
+    <div className="border p-3 flex flex-col gap-2" style={{ borderColor: "#E0E0E0", backgroundColor: "#fff" }}>
+      <p className="text-xs font-black uppercase tracking-wider" style={{ color: "#000", letterSpacing: "0.1em" }}>{title}</p>
       {children}
     </div>
   )
@@ -812,8 +706,8 @@ function SummaryBlock({ title, children }: { title: string; children: React.Reac
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-2 text-xs">
-      <span style={{ color: "oklch(0.55 0 0)" }}>{label}</span>
-      <span className="font-semibold text-right" style={{ color: "oklch(0.2 0.02 270)" }}>{value}</span>
+      <span style={{ color: "#9E9E9E" }}>{label}</span>
+      <span className="font-semibold text-right" style={{ color: "#000" }}>{value}</span>
     </div>
   )
 }

@@ -1,115 +1,86 @@
 "use client"
 
-import { Sparkles, Truck, ShieldCheck, Clock } from "lucide-react"
-
 export function Hero() {
   return (
-    <section id="inicio" className="relative overflow-hidden py-14 md:py-20 px-4">
-      {/* Background pattern */}
-      <div
-        className="absolute inset-0 -z-10"
-        style={{
-          background:
-            "linear-gradient(135deg, oklch(0.6 0.22 5 / 0.08) 0%, oklch(0.72 0.2 50 / 0.10) 50%, oklch(0.92 0.12 90 / 0.18) 100%)",
-        }}
-      />
+    <section
+      id="inicio"
+      className="relative w-full overflow-hidden"
+      style={{ backgroundColor: "#000", minHeight: "90vh" }}
+    >
+      {/* Background image with overlay */}
+      <div className="absolute inset-0">
+        <img
+          src="https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=1400&q=80"
+          alt="Calzado de moda Santa Diabla"
+          className="w-full h-full object-cover"
+          style={{ opacity: 0.45 }}
+        />
+      </div>
 
-      {/* Decorative circles */}
-      <div
-        className="absolute top-8 right-10 w-40 h-40 rounded-full opacity-10 -z-10"
-        style={{ backgroundColor: "oklch(0.6 0.22 5)" }}
-      />
-      <div
-        className="absolute bottom-4 left-8 w-28 h-28 rounded-full opacity-10 -z-10"
-        style={{ backgroundColor: "oklch(0.72 0.2 50)" }}
-      />
+      {/* Content */}
+      <div className="relative z-10 flex flex-col items-start justify-end h-full px-6 md:px-16 py-16 md:py-24" style={{ minHeight: "90vh" }}>
+        <div className="max-w-3xl">
+          <p
+            className="text-xs font-semibold uppercase tracking-widest mb-5"
+            style={{ color: "#9E9E9E", letterSpacing: "0.2em" }}
+          >
+            Concordia, Entre Rios &mdash; Envios a todo el pais
+          </p>
 
-      <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col md:flex-row items-center gap-10 md:gap-16">
-          {/* Text content */}
-          <div className="flex-1 text-center md:text-left">
-            <div
-              className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold mb-4"
-              style={{ backgroundColor: "oklch(0.92 0.12 90)", color: "oklch(0.2 0.02 270)" }}
+          <h1
+            className="font-black uppercase leading-none mb-6"
+            style={{
+              color: "#fff",
+              fontSize: "clamp(3.5rem, 10vw, 8rem)",
+              letterSpacing: "-0.03em",
+              lineHeight: 0.92,
+            }}
+          >
+            Santa<br />Diabla.
+          </h1>
+
+          <p
+            className="text-base md:text-lg font-medium mb-10 max-w-md leading-relaxed"
+            style={{ color: "#9E9E9E" }}
+          >
+            Calzado con caracter. Botas, borcegos, zapatillas e importados para la mujer que sabe lo que quiere.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <a
+              href="#catalogo"
+              className="inline-flex items-center justify-center px-8 py-4 text-sm font-bold uppercase tracking-widest transition-opacity hover:opacity-80"
+              style={{
+                backgroundColor: "#fff",
+                color: "#000",
+                letterSpacing: "0.1em",
+              }}
             >
-              <Sparkles size={13} />
-              Tu tienda de fiestas en Concordia
-            </div>
-
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight text-balance mb-4">
-              <span style={{ color: "oklch(0.6 0.22 5)" }}>Todo para</span>
-              <br />
-              <span style={{ color: "oklch(0.2 0.02 270)" }}>tu fiesta perfecta</span>
-            </h1>
-
-            <p className="text-base md:text-lg leading-relaxed mb-8 max-w-lg mx-auto md:mx-0" style={{ color: "oklch(0.45 0.03 270)" }}>
-              Globos, cotillón, disfraces, artículos de cumpleaños, casamientos y más. Los mejores precios de Concordia, Entre Ríos.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
-              <a
-                href="#productos"
-                className="inline-flex items-center justify-center gap-2 rounded-full px-7 py-3 text-sm font-bold transition-all hover:scale-105 hover:shadow-lg"
-                style={{ backgroundColor: "oklch(0.6 0.22 5)", color: "oklch(1 0 0)" }}
-              >
-                Ver productos
-              </a>
-              <a
-                href="#contacto"
-                className="inline-flex items-center justify-center gap-2 rounded-full px-7 py-3 text-sm font-bold border-2 transition-all hover:scale-105"
-                style={{ borderColor: "oklch(0.6 0.22 5)", color: "oklch(0.6 0.22 5)", backgroundColor: "transparent" }}
-              >
-                Contactarnos
-              </a>
-            </div>
-          </div>
-
-          {/* Hero image */}
-          <div className="flex-1 w-full max-w-md">
-            <div className="relative rounded-3xl overflow-hidden shadow-2xl">
-              <img
-                src="https://placehold.co/540x380?text=Colorful+party+supplies+store+with+balloons+confetti+ribbons+streamers+festive+decorations"
-                alt="Globos coloridos, cotillón y artículos de fiesta en Cotillón Cienfuegos Concordia"
-                className="w-full h-full object-cover"
-              />
-              {/* Badge flotante */}
-              <div
-                className="absolute top-4 right-4 rounded-2xl px-4 py-2 text-center shadow-lg"
-                style={{ backgroundColor: "oklch(0.92 0.12 90)" }}
-              >
-                <p className="text-xs font-bold" style={{ color: "oklch(0.2 0.02 270)" }}>Más de</p>
-                <p className="text-2xl font-extrabold" style={{ color: "oklch(0.6 0.22 5)" }}>500+</p>
-                <p className="text-xs font-bold" style={{ color: "oklch(0.2 0.02 270)" }}>productos</p>
-              </div>
-            </div>
+              Ver coleccion
+            </a>
+            <a
+              href="#encargo"
+              className="inline-flex items-center justify-center px-8 py-4 text-sm font-bold uppercase tracking-widest border transition-opacity hover:bg-white hover:text-black"
+              style={{
+                borderColor: "#fff",
+                color: "#fff",
+                letterSpacing: "0.1em",
+              }}
+            >
+              Pedir por encargo
+            </a>
           </div>
         </div>
 
-        {/* Feature badges */}
-        <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { icon: Truck, label: "Envío a domicilio", sub: "Toda Concordia" },
-            { icon: ShieldCheck, label: "Productos de calidad", sub: "Garantía total" },
-            { icon: Clock, label: "Atención rápida", sub: "Lunes a sábado" },
-            { icon: Sparkles, label: "Variedad única", sub: "+500 artículos" },
-          ].map(({ icon: Icon, label, sub }) => (
-            <div
-              key={label}
-              className="flex items-center gap-3 rounded-2xl p-4 shadow-sm"
-              style={{ backgroundColor: "oklch(1 0 0)" }}
-            >
-              <div
-                className="flex-shrink-0 rounded-xl p-2"
-                style={{ backgroundColor: "oklch(0.6 0.22 5 / 0.1)" }}
-              >
-                <Icon size={20} style={{ color: "oklch(0.6 0.22 5)" }} />
-              </div>
-              <div>
-                <p className="text-sm font-semibold" style={{ color: "oklch(0.2 0.02 270)" }}>{label}</p>
-                <p className="text-xs" style={{ color: "oklch(0.55 0.03 270)" }}>{sub}</p>
-              </div>
-            </div>
-          ))}
+        {/* Scroll indicator */}
+        <div className="absolute bottom-8 right-8 hidden md:flex flex-col items-center gap-2">
+          <div className="w-px h-16" style={{ backgroundColor: "#9E9E9E" }} />
+          <p
+            className="text-xs uppercase tracking-widest"
+            style={{ color: "#9E9E9E", writingMode: "vertical-rl", letterSpacing: "0.15em" }}
+          >
+            Scroll
+          </p>
         </div>
       </div>
     </section>

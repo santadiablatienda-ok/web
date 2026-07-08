@@ -1,44 +1,49 @@
 "use client"
 
-import { Zap } from "lucide-react"
 import { products, type Product } from "@/lib/products"
 import { ProductCard } from "@/components/product-card"
 
 interface FeaturedSectionProps {
-  onAddToCart: (product: Product, quantity?: number) => void
+  onAddToCart: (product: Product, quantity: number, selectedSize?: string) => void
 }
 
 export function FeaturedSection({ onAddToCart }: FeaturedSectionProps) {
   const featured = products.filter((p) => p.featured).slice(0, 4)
 
   return (
-    <section id="ofertas" className="py-14 px-4 md:px-8" style={{ backgroundColor: "oklch(0.96 0.02 90)" }}>
+    <section id="destacados" className="py-16 px-4 md:px-8" style={{ backgroundColor: "#fff" }}>
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
+        <div className="flex items-end justify-between mb-10 gap-4">
           <div>
-            <div
-              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold mb-2"
-              style={{ backgroundColor: "oklch(0.92 0.12 90)", color: "oklch(0.2 0.02 270)" }}
+            <p
+              className="text-xs font-semibold uppercase tracking-widest mb-3"
+              style={{ color: "#9E9E9E", letterSpacing: "0.2em" }}
             >
-              <Zap size={12} />
               Destacados
-            </div>
-            <h2 className="text-2xl md:text-3xl font-extrabold text-balance" style={{ color: "oklch(0.2 0.02 270)" }}>
-              Más vendidos de la semana
+            </p>
+            <h2
+              className="text-3xl md:text-4xl font-black uppercase leading-none"
+              style={{ color: "#000", letterSpacing: "-0.02em" }}
+            >
+              Nuevos ingresos
             </h2>
           </div>
           <a
-            href="#productos"
-            className="text-sm font-semibold transition-colors hover:underline"
-            style={{ color: "oklch(0.6 0.22 5)" }}
+            href="#catalogo"
+            className="text-xs font-bold uppercase tracking-widest transition-opacity hover:opacity-50 whitespace-nowrap"
+            style={{ color: "#000", letterSpacing: "0.1em" }}
           >
-            Ver todo el catálogo →
+            Ver todo
           </a>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
           {featured.map((product) => (
-            <ProductCard key={product.id} product={product} onAddToCart={(p, qty) => onAddToCart(p, qty)} />
+            <ProductCard
+              key={product.id}
+              product={product}
+              onAddToCart={onAddToCart}
+            />
           ))}
         </div>
       </div>

@@ -1,72 +1,75 @@
-import { Phone, MapPin, Clock, Instagram, Facebook, Mail } from "lucide-react"
+import { Instagram, Phone, MapPin } from "lucide-react"
 
 export function Footer() {
+  const year = new Date().getFullYear()
+
   return (
-    <footer id="contacto" style={{ backgroundColor: "oklch(0.2 0.02 270)" }}>
-      <div className="max-w-6xl mx-auto px-4 md:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+    <footer style={{ backgroundColor: "#111" }}>
+      <div className="max-w-6xl mx-auto px-6 md:px-8 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+
           {/* Brand */}
           <div>
-            <div className="mb-4">
-              <p className="text-xs font-semibold tracking-widest uppercase" style={{ color: "oklch(0.72 0.2 50)" }}>
-                Cotillón
-              </p>
-              <p className="text-2xl font-extrabold" style={{ color: "oklch(1 0 0)" }}>
-                Cienfuegos
-              </p>
-              <p className="text-sm font-medium" style={{ color: "oklch(0.75 0 0)" }}>
-                Concordia, Entre Ríos
-              </p>
-            </div>
-            <p className="text-sm leading-relaxed" style={{ color: "oklch(0.65 0 0)" }}>
-              Tu tienda de confianza para todos tus eventos especiales. Cotillón, globos, disfraces y mucho más con los mejores precios de Concordia.
+            <p
+              className="text-2xl font-black uppercase mb-3 tracking-tight"
+              style={{ color: "#fff", letterSpacing: "-0.02em" }}
+            >
+              Santa Diabla.
             </p>
-            <div className="flex gap-3 mt-5">
+            <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: "#5C5C5C", letterSpacing: "0.12em" }}>
+              The woman with attitude
+            </p>
+            <p className="text-sm leading-relaxed mb-6" style={{ color: "#5C5C5C" }}>
+              Calzado de caracter para la mujer que no pide permiso. Botas, borcegos, zapatillas e importados. Envios a todo el pais.
+            </p>
+            <div className="flex gap-3">
               <a
-                href="https://www.instagram.com/cienfuegoscotillon_concordia/"
+                href="https://www.instagram.com/santadiablatienda/"
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Instagram"
-                className="rounded-full p-2 transition-opacity hover:opacity-80"
-                style={{ backgroundColor: "oklch(0.6 0.22 5 / 0.2)" }}
+                aria-label="Instagram Santa Diabla"
+                className="flex items-center justify-center w-9 h-9 border transition-all hover:bg-white hover:border-white hover:text-black"
+                style={{ borderColor: "#333", color: "#9E9E9E" }}
               >
-                <Instagram size={18} style={{ color: "oklch(0.85 0.15 5)" }} />
+                <Instagram size={16} />
               </a>
               <a
-                href="https://www.facebook.com/"
+                href="https://wa.me/5493456623935"
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Facebook"
-                className="rounded-full p-2 transition-opacity hover:opacity-80"
-                style={{ backgroundColor: "oklch(0.58 0.18 240 / 0.2)" }}
+                aria-label="WhatsApp Santa Diabla"
+                className="flex items-center justify-center w-9 h-9 border transition-all hover:bg-white hover:border-white hover:text-black"
+                style={{ borderColor: "#333", color: "#9E9E9E" }}
               >
-                <Facebook size={18} style={{ color: "oklch(0.75 0.15 240)" }} />
-              </a>
-              <a
-                href="mailto:cfuegos157@gmail.com"
-                aria-label="Email"
-                className="rounded-full p-2 transition-opacity hover:opacity-80"
-                style={{ backgroundColor: "oklch(0.62 0.18 145 / 0.2)" }}
-              >
-                <Mail size={18} style={{ color: "oklch(0.72 0.15 145)" }} />
+                <Phone size={16} />
               </a>
             </div>
           </div>
 
           {/* Links */}
           <div>
-            <h3 className="text-sm font-bold uppercase tracking-wider mb-4" style={{ color: "oklch(0.92 0.12 90)" }}>
-              Navegación
+            <h3
+              className="text-xs font-bold uppercase tracking-widest mb-5"
+              style={{ color: "#fff", letterSpacing: "0.15em" }}
+            >
+              Navegacion
             </h3>
-            <ul className="flex flex-col gap-2">
-              {["Inicio", "Productos", "Categorías", "Ofertas", "Pagos", "Mayoristas", "Instagram", "Contacto"].map((item) => (
-                <li key={item}>
+            <ul className="flex flex-col gap-3">
+              {[
+                { label: "Inicio",        href: "#inicio" },
+                { label: "Catalogo",      href: "#catalogo" },
+                { label: "Botas",         href: "#botas" },
+                { label: "Zapatillas",    href: "#zapatillas" },
+                { label: "Importados",    href: "#importados" },
+                { label: "Por Encargo",   href: "#encargo" },
+              ].map(({ label, href }) => (
+                <li key={label}>
                   <a
-                    href={`#${item.toLowerCase()}`}
-                    className="text-sm transition-colors hover:opacity-80"
-                    style={{ color: "oklch(0.65 0 0)" }}
+                    href={href}
+                    className="text-sm transition-colors hover:text-white"
+                    style={{ color: "#5C5C5C" }}
                   >
-                    {item}
+                    {label}
                   </a>
                 </li>
               ))}
@@ -75,68 +78,47 @@ export function Footer() {
 
           {/* Contact */}
           <div>
-            <h3 className="text-sm font-bold uppercase tracking-wider mb-4" style={{ color: "oklch(0.92 0.12 90)" }}>
+            <h3
+              className="text-xs font-bold uppercase tracking-widest mb-5"
+              style={{ color: "#fff", letterSpacing: "0.15em" }}
+            >
               Contacto
             </h3>
-            <ul className="flex flex-col gap-4">
+            <ul className="flex flex-col gap-5">
               <li className="flex items-start gap-3">
-                <MapPin size={16} className="mt-0.5 flex-shrink-0" style={{ color: "oklch(0.72 0.2 50)" }} />
+                <MapPin size={15} className="mt-0.5 flex-shrink-0" style={{ color: "#5C5C5C" }} />
+                <div>
+                  <p className="text-sm font-medium" style={{ color: "#9E9E9E" }}>Concordia, Entre Rios</p>
+                  <p className="text-xs mt-0.5" style={{ color: "#5C5C5C" }}>Argentina</p>
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <Phone size={15} className="mt-0.5 flex-shrink-0" style={{ color: "#5C5C5C" }} />
                 <div>
                   <a
-                    href="https://maps.app.goo.gl/QTYzmBdnck8zwdBn8"
+                    href="https://wa.me/5493456623935"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm font-medium hover:opacity-80 transition-opacity"
-                    style={{ color: "oklch(0.85 0 0)" }}
+                    className="text-sm font-medium transition-colors hover:text-white"
+                    style={{ color: "#9E9E9E" }}
                   >
-                    San Lorenzo Oeste 325
+                    +54 9 3456 62-3935
                   </a>
-                  <p className="text-xs" style={{ color: "oklch(0.6 0 0)" }}>
-                    Concordia, Entre Ríos, Argentina
-                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: "#5C5C5C" }}>WhatsApp disponible</p>
                 </div>
               </li>
               <li className="flex items-start gap-3">
-                <Phone size={16} className="mt-0.5 flex-shrink-0" style={{ color: "oklch(0.72 0.2 50)" }} />
+                <Instagram size={15} className="mt-0.5 flex-shrink-0" style={{ color: "#5C5C5C" }} />
                 <div>
                   <a
-                    href="https://wa.me/5493454289474"
+                    href="https://www.instagram.com/santadiablatienda/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm font-medium hover:opacity-80 transition-opacity"
-                    style={{ color: "oklch(0.85 0 0)" }}
+                    className="text-sm font-medium transition-colors hover:text-white"
+                    style={{ color: "#9E9E9E" }}
                   >
-                    345 428-9474
+                    @santadiablatienda
                   </a>
-                  <p className="text-xs" style={{ color: "oklch(0.6 0 0)" }}>
-                    WhatsApp disponible
-                  </p>
-                </div>
-              </li>
-              <li className="flex items-start gap-3">
-                <Mail size={16} className="mt-0.5 flex-shrink-0" style={{ color: "oklch(0.72 0.2 50)" }} />
-                <div>
-                  <a
-                    href="mailto:cfuegos157@gmail.com"
-                    className="text-sm font-medium hover:opacity-80 transition-opacity"
-                    style={{ color: "oklch(0.85 0 0)" }}
-                  >
-                    cfuegos157@gmail.com
-                  </a>
-                </div>
-              </li>
-              <li className="flex items-start gap-3">
-                <Clock size={16} className="mt-0.5 flex-shrink-0" style={{ color: "oklch(0.72 0.2 50)" }} />
-                <div className="flex flex-col gap-1">
-                  <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "oklch(0.72 0.2 50)" }}>
-                    Lun a Sáb
-                  </p>
-                  <p className="text-sm font-medium" style={{ color: "oklch(0.85 0 0)" }}>
-                    09:00 – 13:00
-                  </p>
-                  <p className="text-sm font-medium" style={{ color: "oklch(0.85 0 0)" }}>
-                    16:30 – 20:30
-                  </p>
                 </div>
               </li>
             </ul>
@@ -144,11 +126,11 @@ export function Footer() {
         </div>
 
         <div
-          className="mt-10 pt-6 flex flex-col md:flex-row items-center justify-between gap-3 border-t text-xs"
-          style={{ borderColor: "oklch(1 0 0 / 0.08)", color: "oklch(0.5 0 0)" }}
+          className="mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-3 border-t text-xs"
+          style={{ borderColor: "#222", color: "#333" }}
         >
-          <p>© {new Date().getFullYear()} Cotillón Cienfuegos Concordia. Todos los derechos reservados.</p>
-          <p>Envíos a todo el país · Concordia, Entre Ríos, Argentina</p>
+          <p>&copy; {year} Santa Diabla. Todos los derechos reservados.</p>
+          <p>Envios a todo el pais &middot; Concordia, Entre Rios, Argentina</p>
         </div>
       </div>
     </footer>
