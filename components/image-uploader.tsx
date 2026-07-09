@@ -1,7 +1,8 @@
 "use client"
 
 import { useRef, useState, useCallback } from "react"
-import { Upload, X, Link, ImageIcon } from "lucide-react"
+import { Upload, X, Link, ImageIcon, Loader2 } from "lucide-react"
+import { uploadProductImage } from "@/lib/supabase"
 
 interface ImageUploaderProps {
   value: string
@@ -14,25 +15,26 @@ export function ImageUploader({ value, onChange, label = "Imagen", previewSize =
   const [dragging, setDragging] = useState(false)
   const [tab, setTab] = useState<"upload" | "url">("upload")
   const [urlInput, setUrlInput] = useState(value.startsWith("http") ? value : "")
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState("")
   const inputRef = useRef<HTMLInputElement>(null)
 
   const previewDim = previewSize === "sm" ? "w-16 h-16" : previewSize === "lg" ? "w-full h-48" : "w-28 h-28"
-
-  function fileToBase64(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve(reader.result as string)
-      reader.onerror = reject
-      reader.readAsDataURL(file)
-    })
-  }
 
   async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return
     const file = files[0]
     if (!file.type.startsWith("image/")) return
-    const base64 = await fileToBase64(file)
-    onChange(base64)
+    setError("")
+    setUploading(true)
+    try {
+      const url = await uploadProductImage(file)
+      onChange(url)
+    } catch {
+      setError("No se pudo subir la imagen. Intentá de nuevo.")
+    } finally {
+      setUploading(false)
+    }
   }
 
   const onDrop = useCallback(
@@ -111,23 +113,31 @@ export function ImageUploader({ value, onChange, label = "Imagen", previewSize =
             type="file"
             accept="image/*"
             className="hidden"
+            disabled={uploading}
             onChange={(e) => handleFiles(e.target.files)}
           />
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center"
             style={{ backgroundColor: "oklch(0.38 0.12 248 / 0.1)" }}
           >
-            <Upload size={18} style={{ color: "oklch(0.38 0.12 248)" }} />
+            {uploading ? (
+              <Loader2 size={18} className="animate-spin" style={{ color: "oklch(0.38 0.12 248)" }} />
+            ) : (
+              <Upload size={18} style={{ color: "oklch(0.38 0.12 248)" }} />
+            )}
           </div>
           <div className="text-center">
             <p className="text-sm font-semibold" style={{ color: "oklch(0.3 0.02 270)" }}>
-              Arrastrá una imagen aquí
+              {uploading ? "Subiendo..." : "Arrastrá una imagen aquí"}
             </p>
             <p className="text-xs mt-0.5" style={{ color: "oklch(0.6 0 0)" }}>
               o hacé clic para seleccionar · JPG, PNG, WEBP
             </p>
           </div>
         </div>
+      )}
+      {error && (
+        <p className="text-xs font-semibold" style={{ color: "oklch(0.6 0.22 5)" }}>{error}</p>
       )}
 
       {/* Tab: URL */}

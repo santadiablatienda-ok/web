@@ -3,6 +3,7 @@
 import { useRef, useState } from "react"
 import { FolderInput, Loader2 } from "lucide-react"
 import { type Product, type Category } from "@/lib/products"
+import { uploadProductImage } from "@/lib/supabase"
 
 interface FolderImporterProps {
   categories: Category[]
@@ -18,19 +19,11 @@ function titleCase(raw: string): string {
     .join(" ")
 }
 
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result as string)
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
-}
-
 export function FolderImporter({ categories, onImport }: FolderImporterProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<{ count: number; folders: string[] } | null>(null)
+  const [progress, setProgress] = useState({ done: 0, total: 0 })
+  const [result, setResult] = useState<{ count: number; folders: string[]; failed: number } | null>(null)
 
   const defaultCategory = categories.find((c) => c.id !== "todos")?.id ?? "botas"
 
@@ -39,10 +32,13 @@ export function FolderImporter({ categories, onImport }: FolderImporterProps) {
     setLoading(true)
     setResult(null)
 
+    const IMAGE_EXT = /\.(jpe?g|png|webp|gif|heic|heif|avif)$/i
+
     // Agrupar archivos de imagen por su subcarpeta (primer segmento del path relativo)
     const groups = new Map<string, File[]>()
     Array.from(fileList).forEach((file) => {
-      if (!file.type.startsWith("image/")) return
+      const isImage = file.type.startsWith("image/") || IMAGE_EXT.test(file.name)
+      if (!isImage) return
       const relPath = (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name
       const parts = relPath.split("/")
       const folder = parts.length > 1 ? parts[parts.length - 2] : "Sin carpeta"
@@ -51,19 +47,36 @@ export function FolderImporter({ categories, onImport }: FolderImporterProps) {
       groups.set(folder, arr)
     })
 
+    const totalFiles = Array.from(groups.values()).reduce((s, f) => s + f.length, 0)
+    setProgress({ done: 0, total: totalFiles })
+    let failed = 0
+
+    async function uploadWithProgress(file: File): Promise<string | null> {
+      try {
+        const url = await uploadProductImage(file)
+        setProgress((p) => ({ ...p, done: p.done + 1 }))
+        return url
+      } catch {
+        failed++
+        setProgress((p) => ({ ...p, done: p.done + 1 }))
+        return null
+      }
+    }
+
     const newProducts: Omit<Product, "id">[] = []
     for (const [folder, files] of groups) {
       const sorted = [...files].sort((a, b) => a.name.length - b.name.length || a.name.localeCompare(b.name))
-      const base64s = await Promise.all(sorted.map(fileToBase64))
+      const urls = (await Promise.all(sorted.map(uploadWithProgress))).filter((u): u is string => !!u)
+      if (urls.length === 0) continue
       const name = titleCase(folder)
       newProducts.push({
         name,
         description: "",
         price: 0,
         category: defaultCategory,
-        image: base64s[0] ?? "",
+        image: urls[0],
         imageAlt: name,
-        gallery: base64s.slice(1),
+        gallery: urls.slice(1),
         featured: false,
         colors: [],
         sizes: [],
@@ -75,7 +88,7 @@ export function FolderImporter({ categories, onImport }: FolderImporterProps) {
     }
 
     onImport(newProducts)
-    setResult({ count: newProducts.length, folders: Array.from(groups.keys()) })
+    setResult({ count: newProducts.length, folders: Array.from(groups.keys()), failed })
     setLoading(false)
     if (inputRef.current) inputRef.current.value = ""
   }
@@ -100,12 +113,14 @@ export function FolderImporter({ categories, onImport }: FolderImporterProps) {
         style={{ borderColor: "oklch(0.88 0.03 90)", color: "oklch(0.4 0.03 270)", backgroundColor: "oklch(0.98 0.01 90)" }}
       >
         {loading ? <Loader2 size={14} className="animate-spin" /> : <FolderInput size={14} />}
-        {loading ? "Importando..." : "Importar desde carpeta"}
+        {loading ? `Subiendo ${progress.done}/${progress.total}...` : "Importar desde carpeta"}
       </button>
       {result && (
-        <p className="text-xs" style={{ color: "oklch(0.55 0.18 145)" }}>
-          Se importaron {result.count} producto{result.count !== 1 ? "s" : ""} ({result.folders.join(", ")}).
-          Completá precio, categoría, talles y stock de cada uno.
+        <p className="text-xs" style={{ color: result.count > 0 ? "oklch(0.55 0.18 145)" : "oklch(0.6 0.22 5)" }}>
+          {result.count > 0
+            ? `Se importaron ${result.count} producto${result.count !== 1 ? "s" : ""} (${result.folders.join(", ")}). Completá precio, categoría, talles y stock de cada uno.`
+            : "No se pudo importar ningún producto."}
+          {result.failed > 0 && ` ${result.failed} imagen${result.failed !== 1 ? "es" : ""} fallaron al subir.`}
         </p>
       )}
     </div>
