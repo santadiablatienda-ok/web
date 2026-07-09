@@ -1,4 +1,4 @@
-import { Instagram, Phone, MapPin } from "lucide-react"
+import { Instagram, Phone, MapPin, Truck } from "lucide-react"
 
 export function Footer() {
   const year = new Date().getFullYear()
@@ -119,6 +119,32 @@ export function Footer() {
                   >
                     @santadiablatienda
                   </a>
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <Truck size={15} className="mt-0.5 flex-shrink-0" style={{ color: "#5C5C5C" }} />
+                <div>
+                  <p className="text-sm font-medium" style={{ color: "#9E9E9E" }}>Seguí tu envío</p>
+                  <div className="flex flex-col gap-1 mt-1">
+                    <a
+                      href="https://www.andreani.com/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-semibold uppercase tracking-wide transition-colors hover:text-white underline"
+                      style={{ color: "#5C5C5C" }}
+                    >
+                      Andreani
+                    </a>
+                    <a
+                      href="https://viacargo.com.ar/seguimiento-de-envio/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-semibold uppercase tracking-wide transition-colors hover:text-white underline"
+                      style={{ color: "#5C5C5C" }}
+                    >
+                      Via Cargo
+                    </a>
+                  </div>
                 </div>
               </li>
             </ul>
