@@ -4,19 +4,19 @@ const banners = [
   {
     id: "botas",
     label: "Botas.",
-    image: "https://images.unsplash.com/photo-1520639888713-7851133b1ed0?w=1200&q=80",
+    image: "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1783568281440-47yriz.jpg",
     dark: true,
   },
   {
-    id: "borcegos",
-    label: "Borcegos.",
-    image: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=1200&q=80",
+    id: "samba",
+    label: "Samba.",
+    image: "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1783568321416-9a4il0.jpg",
     dark: false,
   },
   {
     id: "zapatillas",
     label: "Zapatillas.",
-    image: "https://images.unsplash.com/photo-1551107696-a4b0c5a0d9a2?w=1200&q=80",
+    image: "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1783568285353-wxc227.jpg",
     dark: true,
   },
   {
