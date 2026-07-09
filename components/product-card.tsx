@@ -1,12 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { ShoppingCart, CheckCircle2, MessageCircle } from "lucide-react"
-import { type Product, formatPrice } from "@/lib/products"
+import { ShoppingCart, CheckCircle2, MessageCircle, PackagePlus } from "lucide-react"
+import { type Product, formatPrice, finalPrice } from "@/lib/products"
 
 interface ProductCardProps {
   product: Product
-  onAddToCart: (product: Product, quantity: number, selectedSize?: string) => void
+  onAddToCart: (product: Product, quantity: number, selectedSize?: string, isBackorder?: boolean) => void
 }
 
 export function ProductCard({ product, onAddToCart }: ProductCardProps) {
@@ -17,6 +17,8 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   const hasSizes = product.sizes && product.sizes.length > 0 && !product.isEncargo
   const isEncargo = product.isEncargo
   const outOfStock = product.stock === 0
+  const hasDiscount = !!product.discountPercent && product.discountPercent > 0
+  const priceNow = finalPrice(product)
 
   function handleAdd() {
     if (hasSizes && !selectedSize) {
@@ -25,6 +27,20 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
       return
     }
     onAddToCart(product, 1, selectedSize || undefined)
+    setAdded(true)
+    setTimeout(() => {
+      setAdded(false)
+      setSelectedSize("")
+    }, 1800)
+  }
+
+  function handleBackorder() {
+    if (hasSizes && !selectedSize) {
+      setSizeError(true)
+      setTimeout(() => setSizeError(false), 2000)
+      return
+    }
+    onAddToCart(product, 1, selectedSize || undefined, true)
     setAdded(true)
     setTimeout(() => {
       setAdded(false)
@@ -98,9 +114,44 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
           </p>
         </div>
 
-        <p className="text-lg font-black" style={{ color: "#000" }}>
-          {formatPrice(product.price)}
-        </p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="text-lg font-black" style={{ color: "#000" }}>
+            {formatPrice(priceNow)}
+          </p>
+          {hasDiscount && (
+            <>
+              <p className="text-sm line-through" style={{ color: "#9E9E9E" }}>
+                {formatPrice(product.price)}
+              </p>
+              <span
+                className="text-xs font-bold uppercase tracking-wider px-2 py-0.5"
+                style={{ backgroundColor: "#E63946", color: "#fff", letterSpacing: "0.05em" }}
+              >
+                -{product.discountPercent}%
+              </span>
+            </>
+          )}
+        </div>
+
+        {/* Colores disponibles */}
+        {product.colors && product.colors.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: "#5C5C5C", letterSpacing: "0.08em" }}>
+              Color
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {product.colors.map((color) => (
+                <span
+                  key={color}
+                  className="px-2.5 py-1 text-xs font-semibold border"
+                  style={{ borderColor: "#E0E0E0", color: "#5C5C5C" }}
+                >
+                  {color}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Tallas */}
         {hasSizes && (
@@ -146,11 +197,27 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
             <MessageCircle size={14} />
             Consultar por WhatsApp
           </button>
+        ) : outOfStock ? (
+          <button
+            onClick={handleBackorder}
+            className="flex flex-col items-center justify-center gap-0.5 py-3 text-xs font-bold uppercase tracking-widest transition-opacity hover:opacity-80"
+            style={{ backgroundColor: added ? "#111" : "#000", color: "#fff", letterSpacing: "0.08em" }}
+          >
+            {added ? (
+              <span className="flex items-center gap-2"><CheckCircle2 size={14} /> Agregado</span>
+            ) : (
+              <>
+                <span className="flex items-center gap-2"><PackagePlus size={14} /> Pedir por encargo</span>
+                <span className="text-[10px] font-semibold normal-case tracking-normal opacity-70">
+                  Seña del 50% · {formatPrice(Math.round(priceNow / 2))}
+                </span>
+              </>
+            )}
+          </button>
         ) : (
           <button
             onClick={handleAdd}
-            disabled={outOfStock}
-            className="flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-widest transition-all"
             style={{
               backgroundColor: added ? "#111" : "#000",
               color: "#fff",

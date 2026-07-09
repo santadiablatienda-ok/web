@@ -17,10 +17,10 @@ import { type Product } from "@/lib/products"
 
 export default function HomePage() {
   const [cartOpen, setCartOpen] = useState(false)
-  const { items, totalItems, totalPrice, addToCart, removeFromCart, updateQuantity, clearCart } = useCart()
+  const { items, totalItems, totalPrice, depositTotal, addToCart, removeFromCart, updateQuantity, clearCart } = useCart()
 
-  function handleAddToCart(product: Product, quantity = 1, selectedSize?: string) {
-    addToCart(product, quantity, selectedSize)
+  function handleAddToCart(product: Product, quantity = 1, selectedSize?: string, isBackorder = false) {
+    addToCart(product, quantity, selectedSize, isBackorder)
     setCartOpen(true)
   }
 
@@ -45,8 +45,9 @@ export default function HomePage() {
         onClose={() => setCartOpen(false)}
         items={items}
         totalPrice={totalPrice}
-        onUpdateQuantity={(id, qty, size) => updateQuantity(id, qty, size)}
-        onRemove={(id, size) => removeFromCart(id, size)}
+        depositTotal={depositTotal}
+        onUpdateQuantity={(id, qty, size, isBackorder) => updateQuantity(id, qty, size, isBackorder)}
+        onRemove={(id, size, isBackorder) => removeFromCart(id, size, isBackorder)}
         onClear={clearCart}
       />
 

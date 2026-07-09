@@ -6,12 +6,20 @@ export interface Product {
   category: string
   image: string
   imageAlt: string
+  gallery?: string[]
   badge?: string
   featured?: boolean
   sizes?: string[]
   stock?: number        // -1 = encargo puro, 0 = sin stock, >0 = con stock
   isEncargo?: boolean
   colors?: string[]
+  discountPercent?: number  // 0-100, descuento simple sobre el precio
+  season?: string           // etiqueta libre, ej: "Verano 2026", "Invierno 2026"
+}
+
+export function finalPrice(product: Pick<Product, "price" | "discountPercent">): number {
+  if (!product.discountPercent || product.discountPercent <= 0) return product.price
+  return Math.round(product.price * (1 - product.discountPercent / 100))
 }
 
 export interface Category {

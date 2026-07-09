@@ -6,9 +6,10 @@ import {
   LogOut, Search, Plus, Pencil, Trash2, Save, X,
   ShoppingBag, Package, Tag, RotateCcw, CheckCircle2, ExternalLink,
   Users, Building2, BadgePercent, ToggleLeft, ToggleRight, Key,
-  Palette, List, FolderPlus, ChevronDown, ChevronUp
+  Palette, FolderPlus, ChevronDown, ChevronUp
 } from "lucide-react"
 import { ImageUploader } from "@/components/image-uploader"
+import { FolderImporter } from "@/components/folder-importer"
 import { isAuthenticated, logout } from "@/lib/auth"
 import { getProducts, saveProducts, resetProducts, getCategories, saveCategories, resetCategories } from "@/lib/products-store"
 import { categories as defaultCategories, formatPrice, type Product, type Category } from "@/lib/products"
@@ -17,20 +18,12 @@ import { getOrders, updateOrderStatus, deleteOrder, type Order } from "@/lib/ord
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const BADGE_COLORS = [
-  { label: "Rosa", value: "oklch(0.6 0.22 5)" },
-  { label: "Naranja", value: "oklch(0.72 0.2 50)" },
-  { label: "Verde", value: "oklch(0.62 0.18 145)" },
-  { label: "Azul", value: "oklch(0.58 0.18 240)" },
-  { label: "Rojo", value: "oklch(0.55 0.22 20)" },
-  { label: "Dorado", value: "oklch(0.65 0.18 35)" },
-]
-
 function emptyProduct(): Omit<Product, "id"> {
   return {
     name: "", description: "", price: 0, category: "botas",
     image: "", imageAlt: "", badge: "",
     featured: false, colors: [], sizes: [], stock: 10, isEncargo: false,
+    discountPercent: 0, season: "",
   }
 }
 
@@ -62,6 +55,7 @@ export default function AdminPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [search, setSearch] = useState("")
   const [filterCat, setFilterCat] = useState("todos")
+  const [filterSeason, setFilterSeason] = useState("todas")
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<Omit<Product, "id">>(emptyProduct())
   const [isNew, setIsNew] = useState(false)
@@ -102,7 +96,7 @@ export default function AdminPage() {
 
   function handleEdit(p: Product) {
     setEditingId(p.id)
-    setEditForm({ ...p, colors: p.colors ?? [], features: p.features ?? [] })
+    setEditForm({ ...p, colors: p.colors ?? [] })
     setIsNew(false)
   }
 
@@ -132,6 +126,14 @@ export default function AdminPage() {
     triggerSaved()
   }
 
+  function handleImportProducts(imported: Omit<Product, "id">[]) {
+    const withIds: Product[] = imported.map((p) => ({ id: generateId(), ...p }))
+    const updated = [...products, ...withIds]
+    setProducts(updated)
+    saveProducts(updated)
+    triggerSaved()
+  }
+
   // ── Category handlers ───────────────────────────────────────────────────────
 
   function handleSaveCat() {
@@ -158,12 +160,14 @@ export default function AdminPage() {
   }
 
   // ── Filtered products ───────────────────────────────────────────────────────
+  const seasons = Array.from(new Set(products.map((p) => p.season).filter((s): s is string => !!s && s.trim() !== "")))
   const filtered = products.filter((p) => {
     const matchCat = filterCat === "todos" || p.category === filterCat
+    const matchSeason = filterSeason === "todas" || p.season === filterSeason
     const matchSearch = search === "" ||
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.description.toLowerCase().includes(search.toLowerCase())
-    return matchCat && matchSearch
+    return matchCat && matchSeason && matchSearch
   })
 
   const catName = (id: string) => categories.find((c) => c.id === id)?.name ?? id
@@ -262,11 +266,20 @@ export default function AdminPage() {
               style={inputStyle}>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
+            {seasons.length > 0 && (
+              <select value={filterSeason} onChange={(e) => setFilterSeason(e.target.value)}
+                className="rounded-xl px-4 py-2.5 text-sm border outline-none"
+                style={inputStyle}>
+                <option value="todas">Todas las temporadas</option>
+                {seasons.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+            )}
             <button onClick={handleNew}
               className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all hover:scale-105"
               style={{ backgroundColor: "oklch(0.38 0.12 248)", color: "oklch(1 0 0)" }}>
               <Plus size={15} /> Nuevo producto
             </button>
+            <FolderImporter categories={categories} onImport={handleImportProducts} />
             <button onClick={() => { resetProducts(); setProducts(getProducts()); triggerSaved() }}
               className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold border transition-all hover:opacity-80"
               style={{ borderColor: "oklch(0.88 0.03 90)", color: "oklch(0.5 0.03 270)", backgroundColor: "oklch(1 0 0)" }}
@@ -325,7 +338,7 @@ export default function AdminPage() {
                     <div className="flex flex-wrap gap-1 mt-0.5">
                       {product.badge && (
                         <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
-                          style={{ backgroundColor: `${product.badgeColor}22`, color: product.badgeColor }}>
+                          style={{ backgroundColor: "oklch(0.6 0.22 5 / 0.13)", color: "oklch(0.55 0.22 20)" }}>
                           {product.badge}
                         </span>
                       )}
@@ -335,10 +348,16 @@ export default function AdminPage() {
                           {product.colors.length} color{product.colors.length > 1 ? "es" : ""}
                         </span>
                       )}
-                      {product.features && product.features.length > 0 && (
+                      {!!product.discountPercent && product.discountPercent > 0 && (
+                        <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                          style={{ backgroundColor: "oklch(0.55 0.18 145 / 0.12)", color: "oklch(0.5 0.18 145)" }}>
+                          -{product.discountPercent}%
+                        </span>
+                      )}
+                      {product.season && (
                         <span className="text-xs px-2 py-0.5 rounded-full"
-                          style={{ backgroundColor: "oklch(0.62 0.18 145 / 0.1)", color: "oklch(0.5 0.18 145)" }}>
-                          {product.features.length} caract.
+                          style={{ backgroundColor: "oklch(0.72 0.2 50 / 0.12)", color: "oklch(0.6 0.2 50)" }}>
+                          {product.season}
                         </span>
                       )}
                     </div>
@@ -568,6 +587,7 @@ export default function AdminPage() {
                         {order.items.map((item, i) => (
                           <p key={i} style={{ color: "oklch(0.35 0 0)" }}>
                             {item.name}{item.size ? ` T.${item.size}` : ""} x{item.quantity} — {formatPrice(item.price * item.quantity)}
+                            {item.isBackorder && <span style={{ color: "oklch(0.55 0.22 5)" }}> · Encargo</span>}
                           </p>
                         ))}
                       </div>
@@ -575,6 +595,11 @@ export default function AdminPage() {
                         <p className="font-bold mb-1" style={{ color: "oklch(0.4 0 0)" }}>Entrega</p>
                         <p style={{ color: "oklch(0.35 0 0)" }}>{order.shippingType === "envio" ? `Envio: ${order.localidad ?? ""}, ${order.provincia ?? ""}` : "Retiro en Concordia"}</p>
                         <p className="mt-1 font-bold" style={{ color: "oklch(0.38 0.12 248)" }}>{formatPrice(order.total)}</p>
+                        {order.depositDue !== undefined && order.depositDue < order.total && (
+                          <p className="text-xs" style={{ color: "oklch(0.6 0.22 5)" }}>
+                            Seña abonada: {formatPrice(order.depositDue)} · Saldo: {formatPrice(order.total - order.depositDue)}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -589,21 +614,44 @@ export default function AdminPage() {
         ══════════════════════════════════════════════════════════════════════ */}
         {activeTab === "metrics" && (() => {
           const completedOrders = orders.filter(o => o.status !== "cancelado")
+          const confirmedOrders = orders.filter(o => ["confirmado", "enviado", "entregado"].includes(o.status))
+          const pendingOrders = orders.filter(o => o.status === "pendiente")
           const totalRevenue = completedOrders.reduce((sum, o) => sum + o.total, 0)
+          const confirmedRevenue = confirmedOrders.reduce((sum, o) => sum + o.total, 0)
+          const pendingRevenue = pendingOrders.reduce((sum, o) => sum + o.total, 0)
+          const balancePending = completedOrders.reduce((sum, o) => sum + Math.max(0, o.total - (o.depositDue ?? o.total)), 0)
           const avgOrder = completedOrders.length > 0 ? totalRevenue / completedOrders.length : 0
-          const productCounts: Record<string, number> = {}
+
+          const productCounts: Record<string, { qty: number; revenue: number }> = {}
           completedOrders.forEach(o => o.items.forEach(item => {
-            productCounts[item.name] = (productCounts[item.name] ?? 0) + item.quantity
+            const entry = productCounts[item.name] ?? { qty: 0, revenue: 0 }
+            entry.qty += item.quantity
+            entry.revenue += item.price * item.quantity
+            productCounts[item.name] = entry
           }))
-          const topProducts = Object.entries(productCounts).sort((a, b) => b[1] - a[1]).slice(0, 5)
+          const allProductsRanking = Object.entries(productCounts).sort((a, b) => b[1].qty - a[1].qty)
+
+          const categoryRevenue: Record<string, number> = {}
+          completedOrders.forEach(o => o.items.forEach(item => {
+            const cat = item.category ? catName(item.category) : "Sin categoría"
+            categoryRevenue[cat] = (categoryRevenue[cat] ?? 0) + item.price * item.quantity
+          }))
+          const categoryRanking = Object.entries(categoryRevenue).sort((a, b) => b[1] - a[1])
+          const maxCategoryRevenue = Math.max(1, ...categoryRanking.map(([, v]) => v))
+
+          const outOfStockProducts = products.filter(p => !p.isEncargo && p.stock === 0)
+          const lowStockProducts = products.filter(p => !p.isEncargo && (p.stock ?? 0) > 0 && (p.stock ?? 0) <= 3)
+
           return (
             <div className="flex flex-col gap-8">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {[
                   { label: "Pedidos totales", value: orders.length, color: "oklch(0.38 0.12 248)" },
                   { label: "Pedidos activos", value: completedOrders.length, color: "oklch(0.62 0.18 145)" },
-                  { label: "Ingresos estimados", value: formatPrice(totalRevenue), color: "oklch(0.72 0.2 50)" },
                   { label: "Ticket promedio", value: formatPrice(avgOrder), color: "oklch(0.6 0.22 5)" },
+                  { label: "Ingresos confirmados", value: formatPrice(confirmedRevenue), color: "oklch(0.55 0.18 145)" },
+                  { label: "Ingresos pendientes", value: formatPrice(pendingRevenue), color: "oklch(0.72 0.2 50)" },
+                  { label: "Saldo pendiente (encargos)", value: formatPrice(balancePending), color: "oklch(0.6 0.22 20)" },
                 ].map(({ label, value, color }) => (
                   <div key={label} className="rounded-2xl p-5 border" style={{ backgroundColor: "oklch(1 0 0)", borderColor: "oklch(0.88 0.03 90)" }}>
                     <p className="text-xl font-extrabold" style={{ color }}>{value}</p>
@@ -611,24 +659,72 @@ export default function AdminPage() {
                   </div>
                 ))}
               </div>
+
               <div className="rounded-2xl border p-5" style={{ backgroundColor: "oklch(1 0 0)", borderColor: "oklch(0.88 0.03 90)" }}>
-                <p className="text-sm font-bold mb-4" style={{ color: "oklch(0.2 0.02 270)" }}>Productos mas vendidos</p>
-                {topProducts.length === 0 ? (
-                  <p className="text-xs" style={{ color: "oklch(0.55 0 0)" }}>Sin datos todavia. Los pedidos completados apareceran aqui.</p>
+                <p className="text-sm font-bold mb-4" style={{ color: "oklch(0.2 0.02 270)" }}>Facturación por categoría</p>
+                {categoryRanking.length === 0 ? (
+                  <p className="text-xs" style={{ color: "oklch(0.55 0 0)" }}>Sin datos todavia.</p>
                 ) : (
                   <div className="flex flex-col gap-3">
-                    {topProducts.map(([name, qty], i) => (
-                      <div key={name} className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs font-black w-5 text-right" style={{ color: "oklch(0.7 0 0)" }}>#{i + 1}</span>
-                          <span className="text-sm font-medium" style={{ color: "oklch(0.2 0.02 270)" }}>{name}</span>
+                    {categoryRanking.map(([cat, revenue]) => (
+                      <div key={cat} className="flex flex-col gap-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-semibold" style={{ color: "oklch(0.2 0.02 270)" }}>{cat}</span>
+                          <span className="font-bold" style={{ color: "oklch(0.38 0.12 248)" }}>{formatPrice(revenue)}</span>
                         </div>
-                        <span className="text-sm font-bold" style={{ color: "oklch(0.38 0.12 248)" }}>{qty} ud.</span>
+                        <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: "oklch(0.93 0.01 90)" }}>
+                          <div className="h-full rounded-full" style={{ width: `${(revenue / maxCategoryRevenue) * 100}%`, backgroundColor: "oklch(0.38 0.12 248)" }} />
+                        </div>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
+
+              <div className="rounded-2xl border p-5" style={{ backgroundColor: "oklch(1 0 0)", borderColor: "oklch(0.88 0.03 90)" }}>
+                <p className="text-sm font-bold mb-4" style={{ color: "oklch(0.2 0.02 270)" }}>Ranking completo de productos</p>
+                {allProductsRanking.length === 0 ? (
+                  <p className="text-xs" style={{ color: "oklch(0.55 0 0)" }}>Sin datos todavia. Los pedidos completados apareceran aqui.</p>
+                ) : (
+                  <div className="flex flex-col gap-3 max-h-96 overflow-y-auto pr-1">
+                    {allProductsRanking.map(([name, { qty, revenue }], i) => (
+                      <div key={name} className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="text-xs font-black w-6 text-right flex-shrink-0" style={{ color: i < 3 ? "oklch(0.38 0.12 248)" : "oklch(0.7 0 0)" }}>#{i + 1}</span>
+                          <span className="text-sm font-medium truncate" style={{ color: "oklch(0.2 0.02 270)" }}>{name}</span>
+                        </div>
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <span className="text-xs" style={{ color: "oklch(0.55 0 0)" }}>{formatPrice(revenue)}</span>
+                          <span className="text-sm font-bold" style={{ color: "oklch(0.38 0.12 248)" }}>{qty} ud.</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-2xl border p-5" style={{ backgroundColor: "oklch(1 0 0)", borderColor: "oklch(0.88 0.03 90)" }}>
+                <p className="text-sm font-bold mb-4" style={{ color: "oklch(0.2 0.02 270)" }}>Alertas de stock</p>
+                {outOfStockProducts.length === 0 && lowStockProducts.length === 0 ? (
+                  <p className="text-xs" style={{ color: "oklch(0.55 0 0)" }}>Todo el stock está en niveles saludables.</p>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {outOfStockProducts.map((p) => (
+                      <div key={p.id} className="flex items-center justify-between text-xs px-3 py-2 rounded-xl" style={{ backgroundColor: "oklch(0.97 0.05 5)" }}>
+                        <span className="font-semibold" style={{ color: "oklch(0.2 0.02 270)" }}>{p.name}</span>
+                        <span className="font-bold" style={{ color: "oklch(0.55 0.22 5)" }}>Agotado</span>
+                      </div>
+                    ))}
+                    {lowStockProducts.map((p) => (
+                      <div key={p.id} className="flex items-center justify-between text-xs px-3 py-2 rounded-xl" style={{ backgroundColor: "oklch(0.97 0.08 80)" }}>
+                        <span className="font-semibold" style={{ color: "oklch(0.2 0.02 270)" }}>{p.name}</span>
+                        <span className="font-bold" style={{ color: "oklch(0.6 0.2 60)" }}>Stock bajo · {p.stock} ud.</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div className="rounded-2xl border p-5" style={{ backgroundColor: "oklch(1 0 0)", borderColor: "oklch(0.88 0.03 90)" }}>
                 <p className="text-sm font-bold mb-4" style={{ color: "oklch(0.2 0.02 270)" }}>Estado de pedidos</p>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -776,7 +872,6 @@ interface ProductFormProps {
 
 function ProductForm({ form, setForm, categories, isNew, onSave, onCancel }: ProductFormProps) {
   const [colorInput, setColorInput] = useState("")
-  const [featureInput, setFeatureInput] = useState("")
   const [sizeInput, setSizeInput] = useState("")
 
   const f = (key: keyof typeof form, value: unknown) => setForm({ ...form, [key]: value })
@@ -800,16 +895,6 @@ function ProductForm({ form, setForm, categories, isNew, onSave, onCancel }: Pro
   const removeSize = (s: string) => f("sizes", (form.sizes ?? []).filter((x) => x !== s))
 
   const removeColor = (c: string) => f("colors", (form.colors ?? []).filter((x) => x !== c))
-
-  const addFeature = () => {
-    const v = featureInput.trim()
-    if (v && !(form.features ?? []).includes(v)) {
-      f("features", [...(form.features ?? []), v])
-      setFeatureInput("")
-    }
-  }
-
-  const removeFeature = (feat: string) => f("features", (form.features ?? []).filter((x) => x !== feat))
 
   const isValid = form.name.trim() !== "" && form.price > 0
 
@@ -848,6 +933,18 @@ function ProductForm({ form, setForm, categories, isNew, onSave, onCancel }: Pro
             placeholder="0" className={inputClass} style={inputStyle} />
         </div>
 
+        {/* Descuento */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: "oklch(0.4 0.03 270)" }}>Descuento (%)</label>
+          <input type="number" min={0} max={90} value={form.discountPercent ?? 0} onChange={(e) => f("discountPercent", Number(e.target.value))}
+            placeholder="0" className={inputClass} style={inputStyle} />
+          {!!form.discountPercent && form.discountPercent > 0 && (
+            <p className="text-xs" style={{ color: "oklch(0.55 0.18 145)" }}>
+              Precio final: {formatPrice(Math.round(form.price * (1 - form.discountPercent / 100)))}
+            </p>
+          )}
+        </div>
+
         {/* Categoría */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: "oklch(0.4 0.03 270)" }}>Categoría *</label>
@@ -883,20 +980,11 @@ function ProductForm({ form, setForm, categories, isNew, onSave, onCancel }: Pro
             placeholder="Ej: Oferta, Nuevo, Más vendido" className={inputClass} style={inputStyle} />
         </div>
 
-        {/* Color badge */}
+        {/* Temporada */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: "oklch(0.4 0.03 270)" }}>Color etiqueta</label>
-          <div className="flex gap-2 flex-wrap">
-            {BADGE_COLORS.map((bc) => (
-              <button key={bc.value} onClick={() => f("badgeColor", bc.value)} type="button"
-                className="w-7 h-7 rounded-full border-2 transition-all"
-                style={{
-                  backgroundColor: bc.color,
-                  borderColor: form.badgeColor === bc.value ? "oklch(0.2 0.02 270)" : "transparent",
-                }}
-                title={bc.label} />
-            ))}
-          </div>
+          <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: "oklch(0.4 0.03 270)" }}>Temporada</label>
+          <input type="text" value={form.season ?? ""} onChange={(e) => f("season", e.target.value)}
+            placeholder="Ej: Verano 2026, Invierno 2026" className={inputClass} style={inputStyle} />
         </div>
 
         {/* ── Colores disponibles ── */}
@@ -924,36 +1012,6 @@ function ProductForm({ form, setForm, categories, isNew, onSave, onCancel }: Pro
                     <X size={11} />
                   </button>
                 </span>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* ── Características ── */}
-        <div className="flex flex-col gap-2 md:col-span-2">
-          <label className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5" style={{ color: "oklch(0.4 0.03 270)" }}>
-            <List size={13} /> Características
-          </label>
-          <div className="flex gap-2">
-            <input type="text" value={featureInput} onChange={(e) => setFeatureInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addFeature())}
-              placeholder="Ej: Incluye helio, Para exteriores, 45 seg..." className={inputClass} style={inputStyle} />
-            <button onClick={addFeature} type="button"
-              className="flex items-center gap-1 rounded-xl px-4 py-2 text-sm font-semibold flex-shrink-0"
-              style={{ backgroundColor: "oklch(0.62 0.18 145)", color: "oklch(1 0 0)" }}>
-              <Plus size={14} /> Agregar
-            </button>
-          </div>
-          {(form.features ?? []).length > 0 && (
-            <div className="flex flex-col gap-1.5">
-              {(form.features ?? []).map((feat) => (
-                <div key={feat} className="flex items-center justify-between px-3 py-2 rounded-xl"
-                  style={{ backgroundColor: "oklch(0.62 0.18 145 / 0.08)" }}>
-                  <span className="text-xs font-medium" style={{ color: "oklch(0.4 0.18 145)" }}>{feat}</span>
-                  <button onClick={() => removeFeature(feat)} type="button">
-                    <X size={12} style={{ color: "oklch(0.55 0.18 145)" }} />
-                  </button>
-                </div>
               ))}
             </div>
           )}

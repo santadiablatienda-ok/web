@@ -1,27 +1,17 @@
 "use client"
 
-import { Banknote, CreditCard, Building2, Wallet } from "lucide-react"
+import { Banknote, Wallet } from "lucide-react"
 
 const methods = [
   {
     icon: Banknote,
     title: "Transferencia bancaria",
-    description: "Transferi desde cualquier banco o billetera virtual al instante.",
-  },
-  {
-    icon: Building2,
-    title: "Deposito bancario",
-    description: "Realizá un deposito en efectivo en cualquier sucursal bancaria.",
-  },
-  {
-    icon: CreditCard,
-    title: "Tarjeta credito / debito",
-    description: "Visa, Mastercard, Cabal y mas. Cuotas disponibles.",
+    description: "Transferi desde cualquier banco al instante.",
   },
   {
     icon: Wallet,
-    title: "Billeteras virtuales",
-    description: "Mercado Pago, Uala, Naranja X y otras billeteras aceptadas.",
+    title: "Mercado Pago",
+    description: "Pagá con Mercado Pago u otra billetera virtual, con tarjeta o dinero en cuenta.",
   },
 ]
 
@@ -44,7 +34,7 @@ export function PaymentMethods() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
           {methods.map(({ icon: Icon, title, description }) => (
             <div
               key={title}

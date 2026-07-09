@@ -1,18 +1,20 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { type Product } from "@/lib/products"
+import { type Product, finalPrice } from "@/lib/products"
 
 export interface CartItem {
   product: Product
   quantity: number
   selectedSize?: string
+  isBackorder?: boolean // pedido por encargo por falta de stock: se abona una seña del 50%
 }
 
 const CART_KEY = "santa-diabla-cart"
+export const DEPOSIT_PERCENT = 50
 
-function cartKey(productId: string, size?: string): string {
-  return size ? `${productId}__${size}` : productId
+function cartKey(productId: string, size?: string, isBackorder?: boolean): string {
+  return `${productId}__${size ?? ""}__${isBackorder ? "encargo" : "stock"}`
 }
 
 export function useCart() {
@@ -34,38 +36,42 @@ export function useCart() {
     } catch { /* ignore */ }
   }, [items, loaded])
 
-  const addToCart = useCallback((product: Product, quantity = 1, selectedSize?: string) => {
+  const addToCart = useCallback((product: Product, quantity = 1, selectedSize?: string, isBackorder = false) => {
     setItems((prev) => {
-      const key = cartKey(product.id, selectedSize)
-      const existing = prev.find((i) => cartKey(i.product.id, i.selectedSize) === key)
+      const key = cartKey(product.id, selectedSize, isBackorder)
+      const existing = prev.find((i) => cartKey(i.product.id, i.selectedSize, i.isBackorder) === key)
       if (existing) {
         return prev.map((i) =>
-          cartKey(i.product.id, i.selectedSize) === key
+          cartKey(i.product.id, i.selectedSize, i.isBackorder) === key
             ? { ...i, quantity: i.quantity + quantity }
             : i
         )
       }
-      return [...prev, { product, quantity, selectedSize }]
+      return [...prev, { product, quantity, selectedSize, isBackorder }]
     })
   }, [])
 
-  const removeFromCart = useCallback((productId: string, selectedSize?: string) => {
-    const key = cartKey(productId, selectedSize)
-    setItems((prev) => prev.filter((i) => cartKey(i.product.id, i.selectedSize) !== key))
+  const removeFromCart = useCallback((productId: string, selectedSize?: string, isBackorder?: boolean) => {
+    const key = cartKey(productId, selectedSize, isBackorder)
+    setItems((prev) => prev.filter((i) => cartKey(i.product.id, i.selectedSize, i.isBackorder) !== key))
   }, [])
 
-  const updateQuantity = useCallback((productId: string, quantity: number, selectedSize?: string) => {
+  const updateQuantity = useCallback((productId: string, quantity: number, selectedSize?: string, isBackorder?: boolean) => {
     if (quantity < 1) return
-    const key = cartKey(productId, selectedSize)
+    const key = cartKey(productId, selectedSize, isBackorder)
     setItems((prev) =>
-      prev.map((i) => cartKey(i.product.id, i.selectedSize) === key ? { ...i, quantity } : i)
+      prev.map((i) => cartKey(i.product.id, i.selectedSize, i.isBackorder) === key ? { ...i, quantity } : i)
     )
   }, [])
 
   const clearCart = useCallback(() => { setItems([]) }, [])
 
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0)
-  const totalPrice = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0)
+  const totalPrice = items.reduce((sum, i) => sum + finalPrice(i.product) * i.quantity, 0)
+  const depositTotal = items.reduce((sum, i) => {
+    const lineTotal = finalPrice(i.product) * i.quantity
+    return sum + (i.isBackorder ? Math.round(lineTotal * DEPOSIT_PERCENT / 100) : lineTotal)
+  }, 0)
 
-  return { items, totalItems, totalPrice, addToCart, removeFromCart, updateQuantity, clearCart }
+  return { items, totalItems, totalPrice, depositTotal, addToCart, removeFromCart, updateQuantity, clearCart }
 }

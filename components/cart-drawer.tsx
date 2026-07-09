@@ -4,11 +4,10 @@ import { useState } from "react"
 import {
   X, Trash2, Plus, Minus, ShoppingBag, MessageCircle,
   ArrowRight, ArrowLeft, User, Package, CheckCircle2,
-  Truck, Store, CreditCard, Banknote, Building2, Wallet, Hash
+  Truck, Store, CreditCard, Banknote, Wallet, Hash
 } from "lucide-react"
 import { type CartItem } from "@/hooks/use-cart"
-import { formatPrice } from "@/lib/products"
-import { ShippingCalculator } from "@/components/shipping-calculator"
+import { formatPrice, finalPrice } from "@/lib/products"
 import { saveOrder, type Order } from "@/lib/orders-store"
 
 interface CartDrawerProps {
@@ -16,14 +15,15 @@ interface CartDrawerProps {
   onClose: () => void
   items: CartItem[]
   totalPrice: number
-  onUpdateQuantity: (id: string, qty: number, size?: string) => void
-  onRemove: (id: string, size?: string) => void
+  depositTotal: number
+  onUpdateQuantity: (id: string, qty: number, size?: string, isBackorder?: boolean) => void
+  onRemove: (id: string, size?: string, isBackorder?: boolean) => void
   onClear: () => void
 }
 
 type Step = "cart" | "form" | "confirm" | "sent"
 type ShippingType = "envio" | "retiro"
-type PaymentType = "transferencia" | "deposito" | "tarjeta" | "billetera"
+type PaymentType = "transferencia" | "billetera"
 
 interface OrderForm {
   nombre: string
@@ -40,15 +40,11 @@ interface OrderForm {
 
 const PAYMENT_LABELS: Record<PaymentType, string> = {
   transferencia: "Transferencia bancaria",
-  deposito: "Deposito bancario",
-  tarjeta: "Tarjeta de credito / debito",
-  billetera: "Billetera virtual (MP, Uala...)",
+  billetera: "Mercado Pago / billetera virtual",
 }
 
 const PAYMENT_ICONS: Record<PaymentType, React.ReactNode> = {
   transferencia: <Banknote size={15} />,
-  deposito: <Building2 size={15} />,
-  tarjeta: <CreditCard size={15} />,
   billetera: <Wallet size={15} />,
 }
 
@@ -75,18 +71,14 @@ const textSecondary = "#5C5C5C"
 const textMuted = "#9E9E9E"
 
 export function CartDrawer({
-  open, onClose, items, totalPrice, onUpdateQuantity, onRemove, onClear,
+  open, onClose, items, totalPrice, depositTotal, onUpdateQuantity, onRemove, onClear,
 }: CartDrawerProps) {
   const [step, setStep] = useState<Step>("cart")
   const [form, setForm] = useState<OrderForm>(defaultForm)
   const [orderId, setOrderId] = useState(generateOrderId)
   const [errors, setErrors] = useState<Partial<Record<keyof OrderForm, string>>>({})
-  const [shippingCost, setShippingCost] = useState(0)
-  const [shippingProvincia, setShippingProvincia] = useState("")
 
   const totalItems = items.reduce((s, i) => s + i.quantity, 0)
-  const estimatedWeight = Math.max(0.5, totalItems * 0.5 + 0.3)
-  const totalWithShipping = totalPrice + shippingCost
 
   function handleClose() {
     onClose()
@@ -95,8 +87,6 @@ export function CartDrawer({
       setForm(defaultForm)
       setErrors({})
       setOrderId(generateOrderId())
-      setShippingCost(0)
-      setShippingProvincia("")
     }, 300)
   }
 
@@ -122,7 +112,8 @@ export function CartDrawer({
     const productLines = items
       .map((i) => {
         const size = i.selectedSize ? ` (Talle: ${i.selectedSize})` : ""
-        return `  - ${i.product.name}${size} x${i.quantity}  ${formatPrice(i.product.price * i.quantity)}`
+        const tag = i.isBackorder ? " [POR ENCARGO - seña 50%]" : ""
+        return `  - ${i.product.name}${size}${tag} x${i.quantity}  ${formatPrice(finalPrice(i.product) * i.quantity)}`
       })
       .join("\n")
 
@@ -130,6 +121,8 @@ export function CartDrawer({
       form.shippingType === "envio"
         ? `Envio a domicilio\n  ${form.direccion}, ${form.localidad}, ${form.provincia}${form.codigoPostal ? ` CP ${form.codigoPostal}` : ""}`
         : "Retiro coordinado en Concordia"
+
+    const hasBackorder = items.some((i) => i.isBackorder)
 
     const lines = [
       `Nuevo pedido #${orderId}`,
@@ -142,9 +135,8 @@ export function CartDrawer({
       `Productos`,
       productLines,
       ``,
-      `Subtotal: ${formatPrice(totalPrice)}`,
-      shippingCost > 0 ? `Envio estimado: ${formatPrice(shippingCost)}` : null,
-      `Total: ${formatPrice(totalWithShipping)}`,
+      `Total del pedido: ${formatPrice(totalPrice)}`,
+      hasBackorder ? `A abonar ahora (incluye seña 50% en items por encargo): ${formatPrice(depositTotal)}` : null,
       ``,
       `Entrega`,
       `  ${shipping}`,
@@ -170,9 +162,12 @@ export function CartDrawer({
         name: i.product.name,
         size: i.selectedSize,
         quantity: i.quantity,
-        price: i.product.price,
+        price: finalPrice(i.product),
+        category: i.product.category,
+        isBackorder: i.isBackorder || undefined,
       })),
-      total: totalWithShipping,
+      total: totalPrice,
+      depositDue: depositTotal,
       shippingType: form.shippingType,
       direccion: form.shippingType === "envio" ? form.direccion : undefined,
       localidad: form.shippingType === "envio" ? form.localidad : undefined,
@@ -305,9 +300,9 @@ export function CartDrawer({
                 </div>
               ) : (
                 <ul className="flex flex-col gap-3">
-                  {items.map(({ product, quantity, selectedSize }) => (
+                  {items.map(({ product, quantity, selectedSize, isBackorder }) => (
                     <li
-                      key={`${product.id}-${selectedSize || ""}`}
+                      key={`${product.id}-${selectedSize || ""}-${isBackorder ? "encargo" : "stock"}`}
                       className="flex gap-3 p-3"
                       style={{ backgroundColor: "#fff", border: "1px solid #E0E0E0" }}
                     >
@@ -327,15 +322,20 @@ export function CartDrawer({
                           </p>
                         )}
                         <p className="text-xs mt-0.5" style={{ color: textMuted }}>
-                          {formatPrice(product.price)} c/u
+                          {formatPrice(finalPrice(product))} c/u
                         </p>
+                        {isBackorder && (
+                          <p className="text-xs font-bold mt-0.5" style={{ color: "#E63946" }}>
+                            Por encargo · seña 50% ({formatPrice(Math.round(finalPrice(product) * quantity / 2))})
+                          </p>
+                        )}
                         <div className="flex items-center justify-between mt-2">
                           <div
                             className="flex items-center overflow-hidden border"
                             style={{ borderColor: "#E0E0E0" }}
                           >
                             <button
-                              onClick={() => onUpdateQuantity(product.id, quantity - 1, selectedSize)}
+                              onClick={() => onUpdateQuantity(product.id, quantity - 1, selectedSize, isBackorder)}
                               disabled={quantity <= 1}
                               className="px-2 py-1 transition-opacity disabled:opacity-30 hover:bg-gray-50"
                               style={{ color: textPrimary }}
@@ -350,7 +350,7 @@ export function CartDrawer({
                               {quantity}
                             </span>
                             <button
-                              onClick={() => onUpdateQuantity(product.id, quantity + 1, selectedSize)}
+                              onClick={() => onUpdateQuantity(product.id, quantity + 1, selectedSize, isBackorder)}
                               className="px-2 py-1 transition-opacity hover:bg-gray-50"
                               style={{ color: textPrimary }}
                               aria-label="Aumentar"
@@ -360,10 +360,10 @@ export function CartDrawer({
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-black" style={{ color: textPrimary }}>
-                              {formatPrice(product.price * quantity)}
+                              {formatPrice(finalPrice(product) * quantity)}
                             </span>
                             <button
-                              onClick={() => onRemove(product.id, selectedSize)}
+                              onClick={() => onRemove(product.id, selectedSize, isBackorder)}
                               className="p-1 transition-opacity hover:opacity-50"
                               style={{ color: "#E63946" }}
                               aria-label={`Eliminar ${product.name}`}
@@ -439,18 +439,6 @@ export function CartDrawer({
                   </div>
                 )}
 
-                {form.shippingType === "envio" && (
-                  <ShippingCalculator
-                    totalWeight={estimatedWeight}
-                    selectedCost={shippingCost}
-                    onShippingSelect={(cost, cp, provincia) => {
-                      setShippingCost(cost)
-                      setShippingProvincia(provincia)
-                      if (cp) setField("codigoPostal", cp)
-                      if (provincia) setField("provincia", provincia)
-                    }}
-                  />
-                )}
               </section>
 
               <section className="flex flex-col gap-3">
@@ -509,25 +497,26 @@ export function CartDrawer({
 
               <SummaryBlock title="Productos">
                 {items.map((i) => (
-                  <div key={`${i.product.id}-${i.selectedSize || ""}`} className="flex justify-between text-xs">
+                  <div key={`${i.product.id}-${i.selectedSize || ""}-${i.isBackorder ? "encargo" : "stock"}`} className="flex justify-between text-xs">
                     <span style={{ color: textSecondary }}>
                       {i.product.name}{i.selectedSize ? ` (T. ${i.selectedSize})` : ""} x{i.quantity}
+                      {i.isBackorder && <span style={{ color: "#E63946", fontWeight: 700 }}> · Por encargo</span>}
                     </span>
                     <span className="font-semibold" style={{ color: textPrimary }}>
-                      {formatPrice(i.product.price * i.quantity)}
+                      {formatPrice(finalPrice(i.product) * i.quantity)}
                     </span>
                   </div>
                 ))}
-                {shippingCost > 0 && (
-                  <div className="flex justify-between text-xs pt-1">
-                    <span style={{ color: textMuted }}>Envio ({shippingProvincia})</span>
-                    <span style={{ color: textPrimary }}>{formatPrice(shippingCost)}</span>
+                <div className="flex justify-between text-sm font-black pt-2 border-t mt-1" style={{ borderColor: "#E0E0E0" }}>
+                  <span style={{ color: textPrimary }}>Total del pedido</span>
+                  <span style={{ color: textPrimary }}>{formatPrice(totalPrice)}</span>
+                </div>
+                {depositTotal !== totalPrice && (
+                  <div className="flex justify-between text-sm font-black" style={{ color: "#E63946" }}>
+                    <span>A abonar ahora (seña 50%)</span>
+                    <span>{formatPrice(depositTotal)}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-sm font-black pt-2 border-t mt-1" style={{ borderColor: "#E0E0E0" }}>
-                  <span style={{ color: textPrimary }}>Total</span>
-                  <span style={{ color: textPrimary }}>{formatPrice(totalWithShipping)}</span>
-                </div>
               </SummaryBlock>
 
               <SummaryBlock title="Cliente">
@@ -604,9 +593,16 @@ export function CartDrawer({
             style={{ borderColor: border, backgroundColor: "#fff" }}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: textMuted, letterSpacing: "0.1em" }}>Total</span>
-              <span className="text-xl font-black" style={{ color: textPrimary }}>{formatPrice(totalPrice)}</span>
+              <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: textMuted, letterSpacing: "0.1em" }}>
+                {depositTotal !== totalPrice ? "A abonar ahora" : "Total"}
+              </span>
+              <span className="text-xl font-black" style={{ color: textPrimary }}>{formatPrice(depositTotal)}</span>
             </div>
+            {depositTotal !== totalPrice && (
+              <p className="text-xs -mt-2" style={{ color: textMuted }}>
+                Incluye seña del 50% en items por encargo. Total del pedido: {formatPrice(totalPrice)}
+              </p>
+            )}
 
             {step === "cart" && (
               <button
