@@ -22,7 +22,7 @@ const banners = [
   {
     id: "importados",
     label: "Importados.",
-    image: "https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?w=1200&q=80",
+    image: "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1783736398590-r1vyjz.jpg",
     dark: false,
   },
 ]
