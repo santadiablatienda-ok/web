@@ -10,7 +10,7 @@ npm run dev
 ```
 
 - Sitio: http://localhost:3000
-- Admin: http://localhost:3000/admin/login — usuario/contraseña `SANTADIABLA.2026`
+- Admin: http://localhost:3000/admin/login — la contraseña la tiene el usuario (no se documenta acá por ser un repo público)
 
 ## Infraestructura
 
