@@ -10,7 +10,7 @@ import {
 import { ImageUploader } from "@/components/image-uploader"
 import { FolderImporter } from "@/components/folder-importer"
 import { isAuthenticated, logout } from "@/lib/auth"
-import { getProducts, saveProducts, resetProducts, getCategories, saveCategories, resetCategories } from "@/lib/products-store"
+import { getProducts, saveProducts, deleteProduct, resetProducts, getCategories, saveCategories, resetCategories } from "@/lib/products-store"
 import { categories as defaultCategories, formatPrice, type Product, type Category } from "@/lib/products"
 import { getOrders, updateOrderStatus, deleteOrder, type Order } from "@/lib/orders-store"
 
@@ -154,6 +154,7 @@ export default function AdminPage() {
     const updated = products.filter((p) => p.id !== id)
     setProducts(updated)
     saveProducts(updated)
+    deleteProduct(id)
     setConfirmDelete(null)
     triggerSaved()
   }

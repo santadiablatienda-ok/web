@@ -28,10 +28,11 @@ function titleCase(raw) {
   return raw.trim().toLowerCase().split(/\s+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
 }
 
-function guessCategory(folderName) {
-  const n = folderName.toLowerCase()
+function guessCategory(relativePath) {
+  const n = relativePath.toLowerCase()
   if (n.includes("borcego")) return "borcegos"
-  if (n.includes("zapatilla") || n.includes("samba")) return "zapatillas"
+  if (n.includes("samba")) return "samba"
+  if (n.includes("zapatilla")) return "zapatillas"
   if (n.includes("importado")) return "importados"
   if (n.includes("bota")) return "botas"
   return "botas"
@@ -41,16 +42,16 @@ const SIZES_MUJER = ["35", "36", "37", "38", "39", "40"]
 const SIZES_ZAPATILLA = ["35", "36", "37", "38", "39", "40", "41"]
 
 function sizesForCategory(cat) {
-  return cat === "zapatillas" ? SIZES_ZAPATILLA : SIZES_MUJER
+  return cat === "zapatillas" || cat === "samba" ? SIZES_ZAPATILLA : SIZES_MUJER
 }
 
-async function findLeafImageFolders(dir) {
+async function findLeafImageFolders(dir, isRoot = false) {
   const entries = await readdir(dir, { withFileTypes: true })
   const files = entries.filter((e) => e.isFile() && IMAGE_EXT.test(e.name)).map((e) => e.name)
   const dirs = entries.filter((e) => e.isDirectory())
 
   let results = []
-  if (files.length > 0) {
+  if (files.length > 0 && !isRoot) {
     results.push({ dir, folderName: path.basename(dir), files })
   }
   for (const d of dirs) {
@@ -83,7 +84,7 @@ async function main() {
   const st = await stat(CATALOGO_DIR).catch(() => null)
   if (!st) throw new Error(`No existe la carpeta ${CATALOGO_DIR}`)
 
-  const folders = await findLeafImageFolders(CATALOGO_DIR)
+  const folders = await findLeafImageFolders(CATALOGO_DIR, true)
   console.log(`Encontradas ${folders.length} carpetas con imagenes.`)
 
   const products = []
@@ -113,7 +114,7 @@ async function main() {
     if (urls.length === 0) continue
 
     const name = titleCase(folderName)
-    const category = guessCategory(folderName)
+    const category = guessCategory(path.relative(CATALOGO_DIR, dir))
     products.push({
       name,
       description: "",

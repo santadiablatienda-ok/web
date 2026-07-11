@@ -40,10 +40,11 @@ pnpm-debug.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# catalogo: videos fuente (no se usan en el sitio, pesan mucho para git)
-CATALOGO/**/*.mov
-CATALOGO/**/*.MOV
-CATALOGO/**/*.mp4
+# catalogo: backup zip (no se sube, pesa 300MB+)
+/CATALOGO.rar
+
+# planilla de pedidos: uso interno, no relacionado al sitio
+/PLANILLA DE PEDIDOS.xlsx
 
 # IDE
 .vscode/
