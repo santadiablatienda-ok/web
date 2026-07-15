@@ -7,7 +7,7 @@ import { getProducts } from "@/lib/products-store"
 import { ProductCard } from "@/components/product-card"
 
 interface CatalogProps {
-  onAddToCart: (product: Product, quantity: number, selectedSize?: string) => void
+  onAddToCart: (product: Product, quantity: number, selectedSize?: string, isBackorder?: boolean, selectedColor?: string) => void
 }
 
 export function Catalog({ onAddToCart }: CatalogProps) {

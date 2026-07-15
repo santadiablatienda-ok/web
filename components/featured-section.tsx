@@ -4,7 +4,7 @@ import { products, type Product } from "@/lib/products"
 import { ProductCard } from "@/components/product-card"
 
 interface FeaturedSectionProps {
-  onAddToCart: (product: Product, quantity: number, selectedSize?: string) => void
+  onAddToCart: (product: Product, quantity: number, selectedSize?: string, isBackorder?: boolean, selectedColor?: string) => void
 }
 
 export function FeaturedSection({ onAddToCart }: FeaturedSectionProps) {

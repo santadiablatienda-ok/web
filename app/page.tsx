@@ -19,8 +19,8 @@ export default function HomePage() {
   const [cartOpen, setCartOpen] = useState(false)
   const { items, totalItems, totalPrice, depositTotal, addToCart, removeFromCart, updateQuantity, clearCart } = useCart()
 
-  function handleAddToCart(product: Product, quantity = 1, selectedSize?: string, isBackorder = false) {
-    addToCart(product, quantity, selectedSize, isBackorder)
+  function handleAddToCart(product: Product, quantity = 1, selectedSize?: string, isBackorder = false, selectedColor?: string) {
+    addToCart(product, quantity, selectedSize, isBackorder, selectedColor)
     setCartOpen(true)
   }
 
@@ -46,8 +46,8 @@ export default function HomePage() {
         items={items}
         totalPrice={totalPrice}
         depositTotal={depositTotal}
-        onUpdateQuantity={(id, qty, size, isBackorder) => updateQuantity(id, qty, size, isBackorder)}
-        onRemove={(id, size, isBackorder) => removeFromCart(id, size, isBackorder)}
+        onUpdateQuantity={(id, qty, size, isBackorder, color) => updateQuantity(id, qty, size, isBackorder, color)}
+        onRemove={(id, size, isBackorder, color) => removeFromCart(id, size, isBackorder, color)}
         onClear={clearCart}
       />
 

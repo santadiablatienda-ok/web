@@ -7,14 +7,15 @@ export interface CartItem {
   product: Product
   quantity: number
   selectedSize?: string
-  isBackorder?: boolean // pedido por encargo por falta de stock: se abona una seña del 50%
+  selectedColor?: string
+  isBackorder?: boolean // pedido por encargo por falta de stock: se abona el 100% por adelantado
 }
 
 const CART_KEY = "santa-diabla-cart"
-export const DEPOSIT_PERCENT = 50
+export const DEPOSIT_PERCENT = 100
 
-function cartKey(productId: string, size?: string, isBackorder?: boolean): string {
-  return `${productId}__${size ?? ""}__${isBackorder ? "encargo" : "stock"}`
+function cartKey(productId: string, size?: string, color?: string, isBackorder?: boolean): string {
+  return `${productId}__${size ?? ""}__${color ?? ""}__${isBackorder ? "encargo" : "stock"}`
 }
 
 export function useCart() {
@@ -36,31 +37,31 @@ export function useCart() {
     } catch { /* ignore */ }
   }, [items, loaded])
 
-  const addToCart = useCallback((product: Product, quantity = 1, selectedSize?: string, isBackorder = false) => {
+  const addToCart = useCallback((product: Product, quantity = 1, selectedSize?: string, isBackorder = false, selectedColor?: string) => {
     setItems((prev) => {
-      const key = cartKey(product.id, selectedSize, isBackorder)
-      const existing = prev.find((i) => cartKey(i.product.id, i.selectedSize, i.isBackorder) === key)
+      const key = cartKey(product.id, selectedSize, selectedColor, isBackorder)
+      const existing = prev.find((i) => cartKey(i.product.id, i.selectedSize, i.selectedColor, i.isBackorder) === key)
       if (existing) {
         return prev.map((i) =>
-          cartKey(i.product.id, i.selectedSize, i.isBackorder) === key
+          cartKey(i.product.id, i.selectedSize, i.selectedColor, i.isBackorder) === key
             ? { ...i, quantity: i.quantity + quantity }
             : i
         )
       }
-      return [...prev, { product, quantity, selectedSize, isBackorder }]
+      return [...prev, { product, quantity, selectedSize, selectedColor, isBackorder }]
     })
   }, [])
 
-  const removeFromCart = useCallback((productId: string, selectedSize?: string, isBackorder?: boolean) => {
-    const key = cartKey(productId, selectedSize, isBackorder)
-    setItems((prev) => prev.filter((i) => cartKey(i.product.id, i.selectedSize, i.isBackorder) !== key))
+  const removeFromCart = useCallback((productId: string, selectedSize?: string, isBackorder?: boolean, selectedColor?: string) => {
+    const key = cartKey(productId, selectedSize, selectedColor, isBackorder)
+    setItems((prev) => prev.filter((i) => cartKey(i.product.id, i.selectedSize, i.selectedColor, i.isBackorder) !== key))
   }, [])
 
-  const updateQuantity = useCallback((productId: string, quantity: number, selectedSize?: string, isBackorder?: boolean) => {
+  const updateQuantity = useCallback((productId: string, quantity: number, selectedSize?: string, isBackorder?: boolean, selectedColor?: string) => {
     if (quantity < 1) return
-    const key = cartKey(productId, selectedSize, isBackorder)
+    const key = cartKey(productId, selectedSize, selectedColor, isBackorder)
     setItems((prev) =>
-      prev.map((i) => cartKey(i.product.id, i.selectedSize, i.isBackorder) === key ? { ...i, quantity } : i)
+      prev.map((i) => cartKey(i.product.id, i.selectedSize, i.selectedColor, i.isBackorder) === key ? { ...i, quantity } : i)
     )
   }, [])
 

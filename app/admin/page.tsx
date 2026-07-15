@@ -13,6 +13,7 @@ import { isAuthenticated, logout } from "@/lib/auth"
 import { getProducts, saveProducts, deleteProduct, resetProducts, getCategories, saveCategories, resetCategories } from "@/lib/products-store"
 import { categories as defaultCategories, formatPrice, type Product, type Category } from "@/lib/products"
 import { getOrders, updateOrderStatus, deleteOrder, type Order } from "@/lib/orders-store"
+import { DEPOSIT_PERCENT } from "@/hooks/use-cart"
 
 // ─── Paleta ──────────────────────────────────────────────────────────────────
 // Mismo lenguaje visual que la tienda: blanco y negro editorial, sin esquinas
@@ -38,13 +39,38 @@ function emptyProduct(): Omit<Product, "id"> {
   return {
     name: "", description: "", price: 0, category: "botas",
     image: "", imageAlt: "", badge: "",
-    featured: false, colors: [], sizes: [], stock: 10, isEncargo: false,
+    featured: false, colors: [], sizes: [], sizeStock: {}, stock: 10, isEncargo: false, active: true,
     discountPercent: 0, season: "",
   }
 }
 
 function generateId(prefix = "prod"): string {
   return `${prefix}-${Math.random().toString(36).slice(2, 9)}`
+}
+
+function productStock(p: Product): number {
+  if (p.sizes && p.sizes.length > 0 && p.sizeStock && Object.keys(p.sizeStock).length > 0) {
+    return Object.values(p.sizeStock).reduce((a, b) => a + (b || 0), 0)
+  }
+  return p.stock ?? 0
+}
+
+// Productos viejos tienen `sizes` + un stock plano pero nunca cargaron `sizeStock` por talle.
+// Al abrirlos en el editor por primera vez, repartimos ese stock plano entre los talles (en vez de
+// mostrar todo en 0) para que el total siga cuadrando; el admin ajusta los números reales después.
+function initSizeStock(p: Product): Record<string, number> {
+  const sizes = p.sizes ?? []
+  if (p.sizeStock && Object.keys(p.sizeStock).length > 0) {
+    const result: Record<string, number> = {}
+    sizes.forEach((s) => { result[s] = p.sizeStock![s] ?? 0 })
+    return result
+  }
+  const total = Math.max(0, p.stock ?? 0)
+  const base = sizes.length > 0 ? Math.floor(total / sizes.length) : 0
+  const remainder = sizes.length > 0 ? total % sizes.length : 0
+  const result: Record<string, number> = {}
+  sizes.forEach((s, i) => { result[s] = base + (i < remainder ? 1 : 0) })
+  return result
 }
 
 const inputClass = "w-full px-3.5 py-2.5 text-sm border outline-none transition-colors focus:border-black"
@@ -128,7 +154,7 @@ export default function AdminPage() {
 
   function handleEdit(p: Product) {
     setEditingId(p.id)
-    setEditForm({ ...p, colors: p.colors ?? [] })
+    setEditForm({ ...p, colors: p.colors ?? [], sizeStock: initSizeStock(p) })
     setIsNew(false)
   }
 
@@ -360,6 +386,12 @@ export default function AdminPage() {
                     <p className="text-sm font-bold truncate" style={{ color: c.black }}>{product.name}</p>
                     <p className="text-xs truncate" style={{ color: c.gray400 }}>{product.description}</p>
                     <div className="flex flex-wrap gap-1 mt-0.5">
+                      {product.active === false && (
+                        <span className="text-xs px-2 py-0.5 font-bold uppercase tracking-wide"
+                          style={{ backgroundColor: c.accent, color: c.white }}>
+                          Desactivado
+                        </span>
+                      )}
                       {product.badge && (
                         <span className="text-xs px-2 py-0.5 font-bold uppercase tracking-wide"
                           style={{ backgroundColor: c.black, color: c.white }}>
@@ -617,7 +649,7 @@ export default function AdminPage() {
                         <p className="font-bold uppercase tracking-wide mb-1" style={{ color: c.gray600 }}>Productos</p>
                         {order.items.map((item, i) => (
                           <p key={i} style={{ color: c.gray600 }}>
-                            {item.name}{item.size ? ` T.${item.size}` : ""} x{item.quantity} — {formatPrice(item.price * item.quantity)}
+                            {item.name}{item.size ? ` T.${item.size}` : ""}{item.color ? ` (${item.color})` : ""} x{item.quantity} — {formatPrice(item.price * item.quantity)}
                             {item.isBackorder && <span style={{ color: c.accent, fontWeight: 700 }}> · Encargo</span>}
                           </p>
                         ))}
@@ -670,8 +702,8 @@ export default function AdminPage() {
           const categoryRanking = Object.entries(categoryRevenue).sort((a, b) => b[1] - a[1])
           const maxCategoryRevenue = Math.max(1, ...categoryRanking.map(([, v]) => v))
 
-          const outOfStockProducts = products.filter(p => !p.isEncargo && p.stock === 0)
-          const lowStockProducts = products.filter(p => !p.isEncargo && (p.stock ?? 0) > 0 && (p.stock ?? 0) <= 3)
+          const outOfStockProducts = products.filter(p => !p.isEncargo && productStock(p) === 0)
+          const lowStockProducts = products.filter(p => !p.isEncargo && productStock(p) > 0 && productStock(p) <= 3)
 
           return (
             <div className="flex flex-col gap-8">
@@ -749,7 +781,7 @@ export default function AdminPage() {
                     {lowStockProducts.map((p) => (
                       <div key={p.id} className="flex items-center justify-between text-xs px-3 py-2" style={{ backgroundColor: "#FBF1DF" }}>
                         <span className="font-semibold" style={{ color: c.black }}>{p.name}</span>
-                        <span className="font-bold uppercase tracking-wide" style={{ color: c.warning }}>Stock bajo · {p.stock} ud.</span>
+                        <span className="font-bold uppercase tracking-wide" style={{ color: c.warning }}>Stock bajo · {productStock(p)} ud.</span>
                       </div>
                     ))}
                   </div>
@@ -807,12 +839,18 @@ function ProductForm({ form, setForm, categories, isNew, onSave, onCancel }: Pro
   const addSize = () => {
     const v = sizeInput.trim()
     if (v && !(form.sizes ?? []).includes(v)) {
-      f("sizes", [...(form.sizes ?? []), v])
+      setForm({ ...form, sizes: [...(form.sizes ?? []), v], sizeStock: { ...(form.sizeStock ?? {}), [v]: 0 } })
       setSizeInput("")
     }
   }
 
-  const removeSize = (s: string) => f("sizes", (form.sizes ?? []).filter((x) => x !== s))
+  const removeSize = (s: string) => {
+    const { [s]: _removed, ...restStock } = form.sizeStock ?? {}
+    setForm({ ...form, sizes: (form.sizes ?? []).filter((x) => x !== s), sizeStock: restStock })
+  }
+
+  const setSizeStock = (s: string, qty: number) =>
+    f("sizeStock", { ...(form.sizeStock ?? {}), [s]: Math.max(0, qty) })
 
   const removeColor = (col: string) => f("colors", (form.colors ?? []).filter((x) => x !== col))
 
@@ -949,24 +987,43 @@ function ProductForm({ form, setForm, categories, isNew, onSave, onCancel }: Pro
             </button>
           </div>
           {(form.sizes ?? []).length > 0 && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col gap-1.5">
               {(form.sizes ?? []).map((s) => (
-                <span key={s} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border"
-                  style={{ borderColor: c.gray200, color: c.black, backgroundColor: c.gray50 }}>
-                  {s}
-                  <button onClick={() => removeSize(s)} type="button"><X size={11} /></button>
-                </span>
+                <div key={s} className="flex items-center gap-2 px-3 py-1.5 border"
+                  style={{ borderColor: c.gray200, backgroundColor: c.gray50 }}>
+                  <span className="text-xs font-semibold w-16" style={{ color: c.black }}>Talle {s}</span>
+                  <input type="number" min={0} value={form.sizeStock?.[s] ?? 0}
+                    onChange={(e) => setSizeStock(s, Number(e.target.value))}
+                    className="w-20 px-2 py-1 text-xs border outline-none focus:border-black"
+                    style={{ borderColor: c.gray200, backgroundColor: c.white, color: c.black }} />
+                  <span className="text-xs" style={{ color: c.gray400 }}>en stock</span>
+                  <button onClick={() => removeSize(s)} type="button" className="ml-auto" style={{ color: c.gray400 }}>
+                    <X size={13} />
+                  </button>
+                </div>
               ))}
+              <p className="text-xs" style={{ color: c.gray400 }}>
+                Un talle en 0 se ofrece como pedido por encargo (seña {DEPOSIT_PERCENT}%).
+              </p>
             </div>
           )}
         </div>
 
         {/* Stock */}
-        <div className="flex flex-col gap-1.5">
-          <label className={labelClass} style={labelStyle}>Stock (-1 = encargo puro)</label>
-          <input type="number" min={-1} value={form.stock ?? 10} onChange={(e) => f("stock", Number(e.target.value))}
-            className={inputClass} style={inputStyle} />
-        </div>
+        {(form.sizes ?? []).length > 0 ? (
+          <div className="flex flex-col gap-1.5">
+            <label className={labelClass} style={labelStyle}>Stock general</label>
+            <div className={inputClass} style={{ ...inputStyle, color: c.gray400, backgroundColor: c.gray50 }}>
+              {Object.values(form.sizeStock ?? {}).reduce((a, b) => a + (b || 0), 0)} (calculado por talle)
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-1.5">
+            <label className={labelClass} style={labelStyle}>Stock (-1 = encargo puro)</label>
+            <input type="number" min={-1} value={form.stock ?? 10} onChange={(e) => f("stock", Number(e.target.value))}
+              className={inputClass} style={inputStyle} />
+          </div>
+        )}
 
         {/* Destacado */}
         <div className="flex items-center gap-3">
@@ -988,6 +1045,24 @@ function ProductForm({ form, setForm, categories, isNew, onSave, onCancel }: Pro
               style={{ left: form.isEncargo ? "calc(100% - 22px)" : "2px", backgroundColor: c.white, boxShadow: "0 1px 3px rgba(0,0,0,0.25)" }} />
           </button>
           <label className="text-sm font-semibold" style={{ color: c.gray600 }}>Solo por encargo</label>
+        </div>
+
+        {/* Activo / Agotado */}
+        <div className="flex items-center gap-3 md:col-span-2">
+          <button type="button" onClick={() => f("active", form.active === false ? true : false)}
+            className="relative w-11 h-6 rounded-full transition-all flex-shrink-0"
+            style={{ backgroundColor: form.active === false ? c.gray200 : c.black }}>
+            <span className="absolute top-0.5 w-5 h-5 rounded-full transition-all"
+              style={{ left: form.active === false ? "2px" : "calc(100% - 22px)", backgroundColor: c.white, boxShadow: "0 1px 3px rgba(0,0,0,0.25)" }} />
+          </button>
+          <div>
+            <label className="text-sm font-semibold" style={{ color: c.gray600 }}>Producto activo</label>
+            {form.active === false && (
+              <p className="text-xs" style={{ color: c.accent }}>
+                Desactivado: en la tienda va a figurar como "Agotado" y no se va a poder comprar ni encargar, pero sigue apareciendo en el catálogo.
+              </p>
+            )}
+          </div>
         </div>
       </div>
 

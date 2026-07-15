@@ -6,7 +6,7 @@ import {
   ArrowRight, ArrowLeft, User, Package, CheckCircle2,
   Truck, Store, CreditCard, Banknote, Wallet, Hash
 } from "lucide-react"
-import { type CartItem } from "@/hooks/use-cart"
+import { type CartItem, DEPOSIT_PERCENT } from "@/hooks/use-cart"
 import { formatPrice, finalPrice } from "@/lib/products"
 import { saveOrder, type Order } from "@/lib/orders-store"
 
@@ -16,8 +16,8 @@ interface CartDrawerProps {
   items: CartItem[]
   totalPrice: number
   depositTotal: number
-  onUpdateQuantity: (id: string, qty: number, size?: string, isBackorder?: boolean) => void
-  onRemove: (id: string, size?: string, isBackorder?: boolean) => void
+  onUpdateQuantity: (id: string, qty: number, size?: string, isBackorder?: boolean, color?: string) => void
+  onRemove: (id: string, size?: string, isBackorder?: boolean, color?: string) => void
   onClear: () => void
 }
 
@@ -112,8 +112,9 @@ export function CartDrawer({
     const productLines = items
       .map((i) => {
         const size = i.selectedSize ? ` (Talle: ${i.selectedSize})` : ""
-        const tag = i.isBackorder ? " [POR ENCARGO - seña 50%]" : ""
-        return `  - ${i.product.name}${size}${tag} x${i.quantity}  ${formatPrice(finalPrice(i.product) * i.quantity)}`
+        const color = i.selectedColor ? ` (Color: ${i.selectedColor})` : ""
+        const tag = i.isBackorder ? ` [POR ENCARGO - seña ${DEPOSIT_PERCENT}%]` : ""
+        return `  - ${i.product.name}${size}${color}${tag} x${i.quantity}  ${formatPrice(finalPrice(i.product) * i.quantity)}`
       })
       .join("\n")
 
@@ -136,7 +137,7 @@ export function CartDrawer({
       productLines,
       ``,
       `Total del pedido: ${formatPrice(totalPrice)}`,
-      hasBackorder ? `A abonar ahora (incluye seña 50% en items por encargo): ${formatPrice(depositTotal)}` : null,
+      hasBackorder ? `A abonar ahora (incluye seña ${DEPOSIT_PERCENT}% en items por encargo): ${formatPrice(depositTotal)}` : null,
       ``,
       `Entrega`,
       `  ${shipping}`,
@@ -161,6 +162,7 @@ export function CartDrawer({
       items: items.map((i) => ({
         name: i.product.name,
         size: i.selectedSize,
+        color: i.selectedColor,
         quantity: i.quantity,
         price: finalPrice(i.product),
         category: i.product.category,
@@ -300,9 +302,9 @@ export function CartDrawer({
                 </div>
               ) : (
                 <ul className="flex flex-col gap-3">
-                  {items.map(({ product, quantity, selectedSize, isBackorder }) => (
+                  {items.map(({ product, quantity, selectedSize, selectedColor, isBackorder }) => (
                     <li
-                      key={`${product.id}-${selectedSize || ""}-${isBackorder ? "encargo" : "stock"}`}
+                      key={`${product.id}-${selectedSize || ""}-${selectedColor || ""}-${isBackorder ? "encargo" : "stock"}`}
                       className="flex gap-3 p-3"
                       style={{ backgroundColor: "#fff", border: "1px solid #E0E0E0" }}
                     >
@@ -316,9 +318,11 @@ export function CartDrawer({
                         <p className="text-xs font-bold leading-snug" style={{ color: textPrimary }}>
                           {product.name}
                         </p>
-                        {selectedSize && (
+                        {(selectedSize || selectedColor) && (
                           <p className="text-xs font-semibold mt-0.5" style={{ color: textMuted }}>
-                            Talle: {selectedSize}
+                            {selectedSize ? `Talle: ${selectedSize}` : ""}
+                            {selectedSize && selectedColor ? " · " : ""}
+                            {selectedColor ? `Color: ${selectedColor}` : ""}
                           </p>
                         )}
                         <p className="text-xs mt-0.5" style={{ color: textMuted }}>
@@ -326,7 +330,7 @@ export function CartDrawer({
                         </p>
                         {isBackorder && (
                           <p className="text-xs font-bold mt-0.5" style={{ color: "#E63946" }}>
-                            Por encargo · seña 50% ({formatPrice(Math.round(finalPrice(product) * quantity / 2))})
+                            Por encargo · seña {DEPOSIT_PERCENT}% ({formatPrice(Math.round(finalPrice(product) * quantity * DEPOSIT_PERCENT / 100))})
                           </p>
                         )}
                         <div className="flex items-center justify-between mt-2">
@@ -335,7 +339,7 @@ export function CartDrawer({
                             style={{ borderColor: "#E0E0E0" }}
                           >
                             <button
-                              onClick={() => onUpdateQuantity(product.id, quantity - 1, selectedSize, isBackorder)}
+                              onClick={() => onUpdateQuantity(product.id, quantity - 1, selectedSize, isBackorder, selectedColor)}
                               disabled={quantity <= 1}
                               className="px-2 py-1 transition-opacity disabled:opacity-30 hover:bg-gray-50"
                               style={{ color: textPrimary }}
@@ -350,7 +354,7 @@ export function CartDrawer({
                               {quantity}
                             </span>
                             <button
-                              onClick={() => onUpdateQuantity(product.id, quantity + 1, selectedSize, isBackorder)}
+                              onClick={() => onUpdateQuantity(product.id, quantity + 1, selectedSize, isBackorder, selectedColor)}
                               className="px-2 py-1 transition-opacity hover:bg-gray-50"
                               style={{ color: textPrimary }}
                               aria-label="Aumentar"
@@ -363,7 +367,7 @@ export function CartDrawer({
                               {formatPrice(finalPrice(product) * quantity)}
                             </span>
                             <button
-                              onClick={() => onRemove(product.id, selectedSize, isBackorder)}
+                              onClick={() => onRemove(product.id, selectedSize, isBackorder, selectedColor)}
                               className="p-1 transition-opacity hover:opacity-50"
                               style={{ color: "#E63946" }}
                               aria-label={`Eliminar ${product.name}`}
@@ -497,9 +501,9 @@ export function CartDrawer({
 
               <SummaryBlock title="Productos">
                 {items.map((i) => (
-                  <div key={`${i.product.id}-${i.selectedSize || ""}-${i.isBackorder ? "encargo" : "stock"}`} className="flex justify-between text-xs">
+                  <div key={`${i.product.id}-${i.selectedSize || ""}-${i.selectedColor || ""}-${i.isBackorder ? "encargo" : "stock"}`} className="flex justify-between text-xs">
                     <span style={{ color: textSecondary }}>
-                      {i.product.name}{i.selectedSize ? ` (T. ${i.selectedSize})` : ""} x{i.quantity}
+                      {i.product.name}{i.selectedSize ? ` (T. ${i.selectedSize})` : ""}{i.selectedColor ? ` (${i.selectedColor})` : ""} x{i.quantity}
                       {i.isBackorder && <span style={{ color: "#E63946", fontWeight: 700 }}> · Por encargo</span>}
                     </span>
                     <span className="font-semibold" style={{ color: textPrimary }}>
@@ -513,7 +517,7 @@ export function CartDrawer({
                 </div>
                 {depositTotal !== totalPrice && (
                   <div className="flex justify-between text-sm font-black" style={{ color: "#E63946" }}>
-                    <span>A abonar ahora (seña 50%)</span>
+                    <span>A abonar ahora (seña {DEPOSIT_PERCENT}%)</span>
                     <span>{formatPrice(depositTotal)}</span>
                   </div>
                 )}
@@ -600,7 +604,7 @@ export function CartDrawer({
             </div>
             {depositTotal !== totalPrice && (
               <p className="text-xs -mt-2" style={{ color: textMuted }}>
-                Incluye seña del 50% en items por encargo. Total del pedido: {formatPrice(totalPrice)}
+                Incluye seña del {DEPOSIT_PERCENT}% en items por encargo. Total del pedido: {formatPrice(totalPrice)}
               </p>
             )}
 

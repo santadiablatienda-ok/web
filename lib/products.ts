@@ -10,8 +10,10 @@ export interface Product {
   badge?: string
   featured?: boolean
   sizes?: string[]
-  stock?: number        // -1 = encargo puro, 0 = sin stock, >0 = con stock
+  stock?: number        // -1 = encargo puro, 0 = sin stock, >0 = con stock (fallback cuando no hay stock por talle)
+  sizeStock?: Record<string, number>  // stock puntual por talle; si falta un talle acá se toma como 0
   isEncargo?: boolean
+  active?: boolean      // false = desactivado a mano: se muestra "Agotado" en la tienda pero no se puede comprar ni encargar (default true)
   colors?: string[]
   discountPercent?: number  // 0-100, descuento simple sobre el precio
   season?: string           // etiqueta libre, ej: "Verano 2026", "Invierno 2026"

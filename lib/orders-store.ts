@@ -6,7 +6,7 @@ export interface Order {
   nombre: string
   telefono: string
   email?: string
-  items: { name: string; size?: string; quantity: number; price: number; category?: string; isBackorder?: boolean }[]
+  items: { name: string; size?: string; color?: string; quantity: number; price: number; category?: string; isBackorder?: boolean }[]
   total: number
   depositDue: number
   shippingType: "envio" | "retiro"

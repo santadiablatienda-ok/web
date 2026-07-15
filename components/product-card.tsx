@@ -1,56 +1,68 @@
 "use client"
 
 import { useState } from "react"
-import { ShoppingCart, CheckCircle2, MessageCircle, PackagePlus } from "lucide-react"
+import { ShoppingCart, CheckCircle2, PackagePlus } from "lucide-react"
 import { type Product, formatPrice, finalPrice } from "@/lib/products"
+import { DEPOSIT_PERCENT } from "@/hooks/use-cart"
 
 interface ProductCardProps {
   product: Product
-  onAddToCart: (product: Product, quantity: number, selectedSize?: string, isBackorder?: boolean) => void
+  onAddToCart: (product: Product, quantity: number, selectedSize?: string, isBackorder?: boolean, selectedColor?: string) => void
 }
 
 export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   const [selectedSize, setSelectedSize] = useState<string>("")
+  const [selectedColor, setSelectedColor] = useState<string>("")
   const [added, setAdded] = useState(false)
   const [sizeError, setSizeError] = useState(false)
+  const [colorError, setColorError] = useState(false)
 
-  const hasSizes = product.sizes && product.sizes.length > 0 && !product.isEncargo
+  const isInactive = product.active === false
+  const hasSizes = product.sizes && product.sizes.length > 0
+  const hasColors = product.colors && product.colors.length > 1
   const isEncargo = product.isEncargo
-  const outOfStock = product.stock === 0
+  const usesSizeStock = hasSizes && !!product.sizeStock && Object.keys(product.sizeStock).length > 0
   const hasDiscount = !!product.discountPercent && product.discountPercent > 0
   const priceNow = finalPrice(product)
 
+  function stockForSize(size: string): number {
+    if (usesSizeStock) return product.sizeStock![size] ?? 0
+    return product.stock ?? 0
+  }
+
+  const totalStock = usesSizeStock
+    ? Object.values(product.sizeStock!).reduce((a, b) => a + b, 0)
+    : (product.stock ?? 0)
+
+  const outOfStock = !isEncargo && totalStock === 0
+
+  // si el producto trackea stock por talle, el estado de "sin stock" depende del talle elegido
+  const needsBackorder = isEncargo || (hasSizes && selectedSize ? stockForSize(selectedSize) <= 0 : outOfStock)
+
+  function validateSelection(): boolean {
+    let ok = true
+    if (hasSizes && !selectedSize) {
+      setSizeError(true)
+      setTimeout(() => setSizeError(false), 2000)
+      ok = false
+    }
+    if (hasColors && !selectedColor) {
+      setColorError(true)
+      setTimeout(() => setColorError(false), 2000)
+      ok = false
+    }
+    return ok
+  }
+
   function handleAdd() {
-    if (hasSizes && !selectedSize) {
-      setSizeError(true)
-      setTimeout(() => setSizeError(false), 2000)
-      return
-    }
-    onAddToCart(product, 1, selectedSize || undefined)
+    if (!validateSelection()) return
+    onAddToCart(product, 1, selectedSize || undefined, needsBackorder, selectedColor || undefined)
     setAdded(true)
     setTimeout(() => {
       setAdded(false)
       setSelectedSize("")
+      setSelectedColor("")
     }, 1800)
-  }
-
-  function handleBackorder() {
-    if (hasSizes && !selectedSize) {
-      setSizeError(true)
-      setTimeout(() => setSizeError(false), 2000)
-      return
-    }
-    onAddToCart(product, 1, selectedSize || undefined, true)
-    setAdded(true)
-    setTimeout(() => {
-      setAdded(false)
-      setSelectedSize("")
-    }, 1800)
-  }
-
-  function handleEncargo() {
-    const msg = `Hola, quiero consultar por el modelo: ${product.name} (${formatPrice(product.price)}). Podrian darme mas informacion?`
-    window.open(`https://wa.me/5493456623935?text=${encodeURIComponent(msg)}`, "_blank")
   }
 
   return (
@@ -75,7 +87,19 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
             {product.badge}
           </span>
         )}
-        {outOfStock && !isEncargo && (
+        {isInactive ? (
+          <div
+            className="absolute inset-0 flex items-center justify-center"
+            style={{ backgroundColor: "rgba(0,0,0,0.55)" }}
+          >
+            <span
+              className="text-xs font-bold uppercase tracking-widest px-4 py-2 border"
+              style={{ borderColor: "#fff", color: "#fff", letterSpacing: "0.15em" }}
+            >
+              Agotado
+            </span>
+          </div>
+        ) : outOfStock && !isEncargo && (
           <div
             className="absolute inset-0 flex items-center justify-center"
             style={{ backgroundColor: "rgba(0,0,0,0.55)" }}
@@ -88,7 +112,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
             </span>
           </div>
         )}
-        {isEncargo && (
+        {!isInactive && isEncargo && (
           <div className="absolute top-3 right-3">
             <span
               className="text-xs font-bold uppercase tracking-wider px-2.5 py-1"
@@ -134,72 +158,95 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
         </div>
 
         {/* Colores disponibles */}
-        {product.colors && product.colors.length > 0 && (
+        {!isInactive && product.colors && product.colors.length > 0 && (
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: "#5C5C5C", letterSpacing: "0.08em" }}>
               Color
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {product.colors.map((color) => (
-                <span
-                  key={color}
-                  className="px-2.5 py-1 text-xs font-semibold border"
-                  style={{ borderColor: "#E0E0E0", color: "#5C5C5C" }}
-                >
-                  {color}
-                </span>
-              ))}
+              {product.colors.map((color) =>
+                hasColors ? (
+                  <button
+                    key={color}
+                    onClick={() => { setSelectedColor(color); setColorError(false) }}
+                    className="px-2.5 py-1 text-xs font-semibold border transition-all"
+                    style={{
+                      borderColor: selectedColor === color ? "#000" : colorError ? "#E63946" : "#E0E0E0",
+                      backgroundColor: selectedColor === color ? "#000" : "transparent",
+                      color: selectedColor === color ? "#fff" : "#000",
+                    }}
+                  >
+                    {color}
+                  </button>
+                ) : (
+                  <span
+                    key={color}
+                    className="px-2.5 py-1 text-xs font-semibold border"
+                    style={{ borderColor: "#E0E0E0", color: "#5C5C5C" }}
+                  >
+                    {color}
+                  </span>
+                )
+              )}
             </div>
+            {colorError && (
+              <p className="text-xs mt-1.5 font-semibold" style={{ color: "#E63946" }}>
+                Selecciona un color antes de agregar
+              </p>
+            )}
           </div>
         )}
 
         {/* Tallas */}
-        {hasSizes && (
+        {!isInactive && hasSizes && (
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#5C5C5C", letterSpacing: "0.08em" }}>
               Talle
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {product.sizes!.map((size) => (
-                <button
-                  key={size}
-                  onClick={() => { setSelectedSize(size); setSizeError(false) }}
-                  className="px-2.5 py-1 text-xs font-semibold border transition-all"
-                  style={{
-                    borderColor: selectedSize === size ? "#000" : sizeError ? "#E63946" : "#E0E0E0",
-                    backgroundColor: selectedSize === size ? "#000" : "transparent",
-                    color: selectedSize === size ? "#fff" : "#000",
-                  }}
-                >
-                  {size}
-                </button>
-              ))}
+              {product.sizes!.map((size) => {
+                const sizeOut = usesSizeStock && stockForSize(size) <= 0
+                return (
+                  <button
+                    key={size}
+                    onClick={() => { setSelectedSize(size); setSizeError(false) }}
+                    className="px-2.5 py-1 text-xs font-semibold border transition-all"
+                    style={{
+                      borderColor: selectedSize === size ? "#000" : sizeError ? "#E63946" : "#E0E0E0",
+                      backgroundColor: selectedSize === size ? "#000" : "transparent",
+                      color: selectedSize === size ? "#fff" : sizeOut ? "#B0B0B0" : "#000",
+                    }}
+                  >
+                    {size}{sizeOut ? " ·" : ""}
+                  </button>
+                )
+              })}
             </div>
             {sizeError && (
               <p className="text-xs mt-1.5 font-semibold" style={{ color: "#E63946" }}>
                 Selecciona un talle antes de agregar
               </p>
             )}
+            {usesSizeStock && selectedSize && stockForSize(selectedSize) <= 0 && (
+              <p className="text-xs mt-1.5 font-semibold" style={{ color: "#E63946" }}>
+                Talle {selectedSize} sin stock — se agrega como pedido por encargo (seña {DEPOSIT_PERCENT}%)
+              </p>
+            )}
           </div>
         )}
 
         {/* CTA */}
-        {isEncargo ? (
+        {isInactive ? (
           <button
-            onClick={handleEncargo}
-            className="flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-widest transition-opacity hover:opacity-80"
-            style={{
-              backgroundColor: "#000",
-              color: "#fff",
-              letterSpacing: "0.08em",
-            }}
+            disabled
+            className="flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-widest cursor-not-allowed"
+            style={{ backgroundColor: "#E0E0E0", color: "#9E9E9E", letterSpacing: "0.08em" }}
           >
-            <MessageCircle size={14} />
-            Consultar por WhatsApp
+            Agotado
           </button>
-        ) : outOfStock ? (
+        ) : needsBackorder ? (
           <button
-            onClick={handleBackorder}
+            onClick={handleAdd}
             className="flex flex-col items-center justify-center gap-0.5 py-3 text-xs font-bold uppercase tracking-widest transition-opacity hover:opacity-80"
             style={{ backgroundColor: added ? "#111" : "#000", color: "#fff", letterSpacing: "0.08em" }}
           >
@@ -209,7 +256,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
               <>
                 <span className="flex items-center gap-2"><PackagePlus size={14} /> Pedir por encargo</span>
                 <span className="text-[10px] font-semibold normal-case tracking-normal opacity-70">
-                  Seña del 50% · {formatPrice(Math.round(priceNow / 2))}
+                  Seña del {DEPOSIT_PERCENT}% · {formatPrice(Math.round(priceNow * DEPOSIT_PERCENT / 100))}
                 </span>
               </>
             )}
