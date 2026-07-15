@@ -656,7 +656,7 @@ export default function AdminPage() {
                       </div>
                       <div>
                         <p className="font-bold uppercase tracking-wide mb-1" style={{ color: c.gray600 }}>Entrega</p>
-                        <p style={{ color: c.gray600 }}>{order.shippingType === "envio" ? `Envio: ${order.localidad ?? ""}, ${order.provincia ?? ""}` : "Retiro en Concordia"}</p>
+                        <p style={{ color: c.gray600 }}>{order.shippingType === "envio" ? `Envio: ${order.localidad ?? ""}, ${order.provincia ?? ""}` : "Retiro coordinado"}</p>
                         <p className="mt-1 font-bold" style={{ color: c.black }}>{formatPrice(order.total)}</p>
                         {order.depositDue !== undefined && order.depositDue < order.total && (
                           <p className="text-xs font-semibold" style={{ color: c.accent }}>

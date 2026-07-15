@@ -88,7 +88,7 @@ export function Footer() {
               <li className="flex items-start gap-3">
                 <MapPin size={15} className="mt-0.5 flex-shrink-0" style={{ color: "#5C5C5C" }} />
                 <div>
-                  <p className="text-sm font-medium" style={{ color: "#9E9E9E" }}>Concordia, Entre Rios</p>
+                  <p className="text-sm font-medium" style={{ color: "#9E9E9E" }}>Envios a todo el pais</p>
                   <p className="text-xs mt-0.5" style={{ color: "#5C5C5C" }}>Argentina</p>
                 </div>
               </li>
@@ -156,7 +156,7 @@ export function Footer() {
           style={{ borderColor: "#222", color: "#333" }}
         >
           <p>&copy; {year} Santa Diabla. Todos los derechos reservados.</p>
-          <p>Envios a todo el pais &middot; Concordia, Entre Rios, Argentina</p>
+          <p>Envios a todo el pais, Argentina</p>
         </div>
       </div>
     </footer>

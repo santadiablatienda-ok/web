@@ -4,8 +4,8 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'SANTA DIABLA · Moda & Actitud',
-  description: 'Calzado de carácter. Botas, borcegos, zapatillas e importados. Concordia, Entre Ríos. Envíos a todo el país.',
-  keywords: 'santa diabla, calzado, botas, borcegos, zapatillas, importados, concordia, entre ríos, moda, actitud',
+  description: 'Calzado de carácter. Botas, borcegos, zapatillas e importados. Envíos a todo el país.',
+  keywords: 'santa diabla, calzado, botas, borcegos, zapatillas, importados, moda, actitud',
 }
 
 export default function RootLayout({

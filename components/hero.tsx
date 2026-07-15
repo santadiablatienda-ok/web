@@ -74,7 +74,7 @@ export function Hero() {
             className="text-xs font-semibold uppercase tracking-widest mb-5"
             style={{ color: "#9E9E9E", letterSpacing: "0.2em" }}
           >
-            Concordia, Entre Rios &mdash; Envios a todo el pais
+            Envios a todo el pais
           </p>
 
           <h1

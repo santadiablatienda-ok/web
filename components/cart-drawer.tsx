@@ -121,7 +121,7 @@ export function CartDrawer({
     const shipping =
       form.shippingType === "envio"
         ? `Envio a domicilio\n  ${form.direccion}, ${form.localidad}, ${form.provincia}${form.codigoPostal ? ` CP ${form.codigoPostal}` : ""}`
-        : "Retiro coordinado en Concordia"
+        : "Retiro coordinado por WhatsApp"
 
     const hasBackorder = items.some((i) => i.isBackorder)
 
@@ -439,7 +439,7 @@ export function CartDrawer({
 
                 {form.shippingType === "retiro" && (
                   <div className="p-3 text-xs leading-relaxed border" style={{ borderColor: "#E0E0E0", backgroundColor: "#fff", color: textSecondary }}>
-                    Coordinaremos el punto de retiro en Concordia, Entre Rios por WhatsApp.
+                    Coordinaremos el punto de retiro por WhatsApp.
                   </div>
                 )}
 
@@ -530,7 +530,7 @@ export function CartDrawer({
               </SummaryBlock>
 
               <SummaryBlock title="Entrega">
-                <SummaryRow label="Tipo" value={form.shippingType === "envio" ? "Envio a domicilio" : "Retiro en Concordia"} />
+                <SummaryRow label="Tipo" value={form.shippingType === "envio" ? "Envio a domicilio" : "Retiro coordinado"} />
                 {form.shippingType === "envio" && (
                   <>
                     <SummaryRow label="Direccion" value={form.direccion} />

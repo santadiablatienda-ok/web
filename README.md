@@ -1,6 +1,6 @@
 # Santa Diabla
 
-Tienda online de calzado (Concordia, Entre Ríos). Next.js + TypeScript + Tailwind CSS.
+Tienda online de calzado, envíos a todo el país. Next.js + TypeScript + Tailwind CSS.
 
 ## Desarrollo
 

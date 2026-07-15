@@ -28,7 +28,7 @@ export function Header({ cartCount, onCartOpen }: HeaderProps) {
         className="w-full text-center py-2 text-xs font-semibold tracking-widest uppercase"
         style={{ backgroundColor: "#000", color: "#fff", letterSpacing: "0.12em" }}
       >
-        Envios a todo el pais · Concordia, Entre Rios
+        Envios a todo el pais
       </div>
 
       <header className="sticky top-0 z-50 w-full border-b" style={{ backgroundColor: "#fff", borderColor: "#E0E0E0" }}>

@@ -1,7 +1,10 @@
 import { createClient } from "@supabase/supabase-js"
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+// Fallback para no romper el build/SSR si faltan las env vars (ej: no cargadas en Vercel).
+// Con el fallback, cualquier llamada real a Supabase Storage falla en runtime con un error claro
+// en vez de tumbar la generación de páginas enteras en el build.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co"
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-key"
 
 export const supabase = createClient(supabaseUrl, supabaseKey)
 

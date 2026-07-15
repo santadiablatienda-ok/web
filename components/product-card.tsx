@@ -54,9 +54,13 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
     return ok
   }
 
+  // si hay un solo color no hace falta elegirlo: se manda solo igual
+  const singleColor = product.colors && product.colors.length === 1 ? product.colors[0] : undefined
+  const effectiveColor = selectedColor || singleColor
+
   function handleAdd() {
     if (!validateSelection()) return
-    onAddToCart(product, 1, selectedSize || undefined, needsBackorder, selectedColor || undefined)
+    onAddToCart(product, 1, selectedSize || undefined, needsBackorder, effectiveColor || undefined)
     setAdded(true)
     setTimeout(() => {
       setAdded(false)
