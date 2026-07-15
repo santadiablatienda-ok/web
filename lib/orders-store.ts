@@ -1,4 +1,4 @@
-const ORDERS_KEY = "santa-diabla-orders"
+import { supabase } from "@/lib/supabase"
 
 export interface Order {
   id: string
@@ -18,29 +18,78 @@ export interface Order {
   status: "pendiente" | "confirmado" | "enviado" | "entregado" | "cancelado"
 }
 
-export function getOrders(): Order[] {
-  if (typeof window === "undefined") return []
-  try {
-    const raw = localStorage.getItem(ORDERS_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch { return [] }
+interface OrderRow {
+  id: string
+  created_at: string
+  nombre: string
+  telefono: string
+  email: string | null
+  items: Order["items"]
+  total: number
+  deposit_due: number
+  shipping_type: Order["shippingType"]
+  direccion: string | null
+  localidad: string | null
+  provincia: string | null
+  payment_type: string | null
+  nota: string | null
+  status: Order["status"]
 }
 
-export function saveOrder(order: Order): void {
-  if (typeof window === "undefined") return
-  const orders = getOrders()
-  orders.unshift(order)
-  localStorage.setItem(ORDERS_KEY, JSON.stringify(orders))
+function rowToOrder(r: OrderRow): Order {
+  return {
+    id: r.id,
+    createdAt: r.created_at,
+    nombre: r.nombre,
+    telefono: r.telefono,
+    email: r.email ?? undefined,
+    items: r.items,
+    total: r.total,
+    depositDue: r.deposit_due,
+    shippingType: r.shipping_type,
+    direccion: r.direccion ?? undefined,
+    localidad: r.localidad ?? undefined,
+    provincia: r.provincia ?? undefined,
+    paymentType: r.payment_type ?? "",
+    nota: r.nota ?? undefined,
+    status: r.status,
+  }
 }
 
-export function updateOrderStatus(id: string, status: Order["status"]): void {
-  if (typeof window === "undefined") return
-  const orders = getOrders().map((o) => o.id === id ? { ...o, status } : o)
-  localStorage.setItem(ORDERS_KEY, JSON.stringify(orders))
+export async function getOrders(): Promise<Order[]> {
+  const { data, error } = await supabase.from("orders").select("*").order("created_at", { ascending: false })
+  if (error) throw error
+  return (data as OrderRow[]).map(rowToOrder)
 }
 
-export function deleteOrder(id: string): void {
-  if (typeof window === "undefined") return
-  const orders = getOrders().filter((o) => o.id !== id)
-  localStorage.setItem(ORDERS_KEY, JSON.stringify(orders))
+export async function saveOrder(order: Order): Promise<void> {
+  const row = {
+    id: order.id,
+    created_at: order.createdAt,
+    nombre: order.nombre,
+    telefono: order.telefono,
+    email: order.email ?? null,
+    items: order.items,
+    total: order.total,
+    deposit_due: order.depositDue,
+    shipping_type: order.shippingType,
+    direccion: order.direccion ?? null,
+    localidad: order.localidad ?? null,
+    provincia: order.provincia ?? null,
+    payment_type: order.paymentType,
+    nota: order.nota ?? null,
+    status: order.status,
+  }
+  const { error } = await supabase.from("orders").insert(row)
+  if (error) throw error
+}
+
+export async function updateOrderStatus(id: string, status: Order["status"]): Promise<void> {
+  const { error } = await supabase.from("orders").update({ status }).eq("id", id)
+  if (error) throw error
+}
+
+export async function deleteOrder(id: string): Promise<void> {
+  const { error } = await supabase.from("orders").delete().eq("id", id)
+  if (error) throw error
 }

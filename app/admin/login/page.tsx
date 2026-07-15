@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Eye, EyeOff, Lock, User, ShoppingBag } from "lucide-react"
+import { Eye, EyeOff, Lock, Mail, ShoppingBag } from "lucide-react"
 import { login, isAuthenticated } from "@/lib/auth"
 
 export default function AdminLoginPage() {
   const router = useRouter()
-  const [username, setUsername] = useState("")
+  const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
@@ -15,23 +15,21 @@ export default function AdminLoginPage() {
   const [checking, setChecking] = useState(true)
 
   useEffect(() => {
-    // Solo verificar sesión en el cliente
-    if (isAuthenticated()) {
-      router.replace("/admin")
-    } else {
-      setChecking(false)
-    }
+    isAuthenticated().then((authed) => {
+      if (authed) router.replace("/admin")
+      else setChecking(false)
+    })
   }, [router])
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError("")
     setLoading(true)
-    const ok = login(username.trim(), password.trim())
+    const { ok, error: err } = await login(email, password)
     if (ok) {
       router.replace("/admin")
     } else {
-      setError("Usuario o contraseña incorrectos")
+      setError(err === "Invalid login credentials" ? "Email o contraseña incorrectos" : (err ?? "No se pudo iniciar sesión"))
       setLoading(false)
     }
   }
@@ -72,22 +70,22 @@ export default function AdminLoginPage() {
           style={{ backgroundColor: "oklch(1 0 0)", borderColor: "oklch(0.88 0.03 90)" }}
         >
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-            {/* Usuario */}
+            {/* Email */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: "oklch(0.4 0.03 270)" }}>
-                Usuario
+                Email
               </label>
               <div className="relative">
-                <User
+                <Mail
                   size={15}
                   className="absolute left-3.5 top-1/2 -translate-y-1/2"
                   style={{ color: "oklch(0.6 0 0)" }}
                 />
                 <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="usuario"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@santadiabla.com"
                   required
                   autoComplete="username"
                   className="w-full rounded-xl pl-10 pr-4 py-3 text-sm border outline-none transition-all focus:ring-2"

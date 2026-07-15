@@ -1,6 +1,8 @@
 "use client"
 
-import { products, type Product } from "@/lib/products"
+import { useEffect, useState } from "react"
+import { type Product } from "@/lib/products"
+import { getProducts } from "@/lib/products-store"
 import { ProductCard } from "@/components/product-card"
 
 interface FeaturedSectionProps {
@@ -8,7 +10,13 @@ interface FeaturedSectionProps {
 }
 
 export function FeaturedSection({ onAddToCart }: FeaturedSectionProps) {
-  const featured = products.filter((p) => p.featured).slice(0, 4)
+  const [featured, setFeatured] = useState<Product[]>([])
+
+  useEffect(() => {
+    getProducts().then((products) => setFeatured(products.filter((p) => p.featured).slice(0, 4))).catch(() => {})
+  }, [])
+
+  if (featured.length === 0) return null
 
   return (
     <section id="destacados" className="py-16 px-4 md:px-8" style={{ backgroundColor: "#fff" }}>

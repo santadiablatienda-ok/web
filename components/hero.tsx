@@ -13,11 +13,12 @@ export function Hero() {
   const [paused, setPaused] = useState(false)
 
   useEffect(() => {
-    const products = getProducts()
-    const withRealPhotos = products.filter((p) => p.image && p.image.includes("supabase.co"))
-    const featured = products.filter((p) => p.featured && p.image)
-    const picks = withRealPhotos.length > 0 ? withRealPhotos : featured.length > 0 ? featured : products.slice(0, 5)
-    setSlides(picks.slice(0, 8))
+    getProducts().then((products) => {
+      const withRealPhotos = products.filter((p) => p.image && p.image.includes("supabase.co"))
+      const featured = products.filter((p) => p.featured && p.image)
+      const picks = withRealPhotos.length > 0 ? withRealPhotos : featured.length > 0 ? featured : products.slice(0, 5)
+      setSlides(picks.slice(0, 8))
+    }).catch(() => {})
   }, [])
 
   const goTo = useCallback((i: number) => {

@@ -10,7 +10,7 @@ import {
 import { ImageUploader } from "@/components/image-uploader"
 import { FolderImporter } from "@/components/folder-importer"
 import { isAuthenticated, logout } from "@/lib/auth"
-import { getProducts, saveProducts, deleteProduct, resetProducts, getCategories, saveCategories, resetCategories } from "@/lib/products-store"
+import { getProducts, saveProducts, deleteProduct, resetProducts, getCategories, saveCategories, deleteCategory, resetCategories } from "@/lib/products-store"
 import { categories as defaultCategories, formatPrice, type Product, type Category } from "@/lib/products"
 import { getOrders, updateOrderStatus, deleteOrder, type Order } from "@/lib/orders-store"
 import { DEPOSIT_PERCENT } from "@/hooks/use-cart"
@@ -134,12 +134,26 @@ export default function AdminPage() {
   const [catForm, setCatForm] = useState<Category>({ id: "", name: "", icon: "star", color: c.black })
   const [confirmDeleteCat, setConfirmDeleteCat] = useState<string | null>(null)
 
+  const [loadError, setLoadError] = useState<string | null>(null)
+
   useEffect(() => {
-    if (!isAuthenticated()) { router.replace("/admin/login"); return }
-    setProducts(getProducts())
-    setCategories(getCategories())
-    setOrders(getOrders())
-    setChecking(false)
+    let cancelled = false
+    isAuthenticated().then(async (authed) => {
+      if (cancelled) return
+      if (!authed) { router.replace("/admin/login"); return }
+      try {
+        const [p, c2, o] = await Promise.all([getProducts(), getCategories(), getOrders()])
+        if (cancelled) return
+        setProducts(p)
+        setCategories(c2)
+        setOrders(o)
+      } catch (e) {
+        if (!cancelled) setLoadError(e instanceof Error ? e.message : String(e))
+      } finally {
+        if (!cancelled) setChecking(false)
+      }
+    })
+    return () => { cancelled = true }
   }, [router])
 
   if (checking) return (
@@ -148,7 +162,17 @@ export default function AdminPage() {
     </main>
   )
 
+  if (loadError) return (
+    <main className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: c.white }}>
+      <p className="text-sm text-center" style={{ color: c.accent }}>Error cargando datos: {loadError}</p>
+    </main>
+  )
+
   function triggerSaved() { setSaved(true); setTimeout(() => setSaved(false), 2500) }
+
+  function reportError(action: string, e: unknown) {
+    alert(`No se pudo ${action}: ${e instanceof Error ? e.message : String(e)}`)
+  }
 
   // ── Product handlers ────────────────────────────────────────────────────────
 
@@ -164,58 +188,74 @@ export default function AdminPage() {
     setIsNew(true)
   }
 
-  function handleSaveProduct() {
+  async function handleSaveProduct() {
     if (!editForm.name.trim() || editForm.price <= 0) return
-    const updated = isNew
-      ? [...products, { id: editingId!, ...editForm }]
-      : products.map((p) => p.id === editingId ? { id: p.id, ...editForm } : p)
-    setProducts(updated)
-    saveProducts(updated)
-    setEditingId(null)
-    setIsNew(false)
-    triggerSaved()
+    const product: Product = { id: editingId!, ...editForm }
+    try {
+      await saveProducts([product])
+      setProducts((prev) => isNew ? [...prev, product] : prev.map((p) => p.id === product.id ? product : p))
+      setEditingId(null)
+      setIsNew(false)
+      triggerSaved()
+    } catch (e) {
+      reportError("guardar el producto", e)
+    }
   }
 
-  function handleDeleteProduct(id: string) {
-    const updated = products.filter((p) => p.id !== id)
-    setProducts(updated)
-    saveProducts(updated)
-    deleteProduct(id)
-    setConfirmDelete(null)
-    triggerSaved()
+  async function handleDeleteProduct(id: string) {
+    try {
+      await deleteProduct(id)
+      setProducts((prev) => prev.filter((p) => p.id !== id))
+      setConfirmDelete(null)
+      triggerSaved()
+    } catch (e) {
+      reportError("borrar el producto", e)
+    }
   }
 
-  function handleImportProducts(imported: Omit<Product, "id">[]) {
+  async function handleImportProducts(imported: Omit<Product, "id">[]) {
     const withIds: Product[] = imported.map((p) => ({ id: generateId(), ...p }))
-    const updated = [...products, ...withIds]
-    setProducts(updated)
-    saveProducts(updated)
-    triggerSaved()
+    try {
+      await saveProducts(withIds)
+      setProducts((prev) => [...prev, ...withIds])
+      triggerSaved()
+    } catch (e) {
+      reportError("importar los productos", e)
+    }
   }
 
   // ── Category handlers ───────────────────────────────────────────────────────
 
-  function handleSaveCat() {
+  async function handleSaveCat() {
     if (!catForm.name.trim()) return
     const slug = catForm.id || catForm.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")
     const cat: Category = { ...catForm, id: slug }
     const updated = isNewCat
       ? [...categories, cat]
       : categories.map((cItem) => cItem.id === editingCat?.id ? cat : cItem)
-    setCategories(updated)
-    saveCategories(updated)
-    setIsNewCat(false)
-    setEditingCat(null)
-    triggerSaved()
+    try {
+      await saveCategories(updated)
+      setCategories(updated)
+      setIsNewCat(false)
+      setEditingCat(null)
+      triggerSaved()
+    } catch (e) {
+      reportError("guardar la categoría", e)
+    }
   }
 
-  function handleDeleteCat(id: string) {
+  async function handleDeleteCat(id: string) {
     if (id === "todos") return
     const updated = categories.filter((cat) => cat.id !== id)
-    setCategories(updated)
-    saveCategories(updated)
-    setConfirmDeleteCat(null)
-    triggerSaved()
+    try {
+      await deleteCategory(id)
+      await saveCategories(updated)
+      setCategories(updated)
+      setConfirmDeleteCat(null)
+      triggerSaved()
+    } catch (e) {
+      reportError("borrar la categoría", e)
+    }
   }
 
   // ── Filtered products ───────────────────────────────────────────────────────
@@ -258,7 +298,7 @@ export default function AdminPage() {
             style={{ borderColor: c.gray200, color: c.gray600 }}>
             <ExternalLink size={13} /> Ver tienda
           </a>
-          <button onClick={() => { logout(); router.replace("/admin/login") }}
+          <button onClick={() => { logout().then(() => router.replace("/admin/login")) }}
             className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-3 py-2 transition-opacity hover:opacity-70"
             style={{ backgroundColor: c.gray50, color: c.gray600 }}>
             <LogOut size={13} /> Salir
@@ -335,7 +375,14 @@ export default function AdminPage() {
             )}
             <PrimaryButton onClick={handleNew}><Plus size={15} /> Nuevo producto</PrimaryButton>
             <FolderImporter categories={categories} onImport={handleImportProducts} />
-            <SecondaryButton title="Restablecer productos originales" onClick={() => { resetProducts(); setProducts(getProducts()); triggerSaved() }}>
+            <SecondaryButton title="Restablecer productos originales" onClick={async () => {
+              if (!confirm("Esto borra TODOS los productos actuales (para todo el mundo, no solo este navegador) y los reemplaza por el catálogo original. ¿Continuar?")) return
+              try {
+                await resetProducts()
+                setProducts(await getProducts())
+                triggerSaved()
+              } catch (e) { reportError("restablecer los productos", e) }
+            }}>
               <RotateCcw size={14} /> Restablecer
             </SecondaryButton>
           </div>
@@ -425,8 +472,10 @@ export default function AdminPage() {
                   </p>
                   {/* Destacado */}
                   <button onClick={() => {
-                    const updated = products.map((p) => p.id === product.id ? { ...p, featured: !p.featured } : p)
-                    setProducts(updated); saveProducts(updated); triggerSaved()
+                    const toggled = { ...product, featured: !product.featured }
+                    saveProducts([toggled])
+                      .then(() => { setProducts((prev) => prev.map((p) => p.id === product.id ? toggled : p)); triggerSaved() })
+                      .catch((e) => reportError("actualizar el producto", e))
                   }} className="text-xs font-bold uppercase tracking-wide px-3 py-1.5 border transition-all hover:opacity-80 w-fit"
                     style={{
                       borderColor: product.featured ? c.black : c.gray200,
@@ -507,7 +556,14 @@ export default function AdminPage() {
                 <p className="text-xs mt-0.5" style={{ color: c.gray400 }}>Creá, editá o eliminá categorías. Los cambios se reflejan en la tienda al instante.</p>
               </div>
               <div className="flex gap-2">
-                <SecondaryButton onClick={() => { resetCategories(); setCategories(getCategories()); triggerSaved() }}>
+                <SecondaryButton onClick={async () => {
+                  if (!confirm("Esto borra TODAS las categorías actuales (para todo el mundo) y las reemplaza por las originales. ¿Continuar?")) return
+                  try {
+                    await resetCategories()
+                    setCategories(await getCategories())
+                    triggerSaved()
+                  } catch (e) { reportError("restablecer las categorías", e) }
+                }}>
                   <RotateCcw size={13} /> Restablecer
                 </SecondaryButton>
                 <PrimaryButton onClick={() => { setIsNewCat(true); setEditingCat(null); setCatForm({ id: "", name: "", icon: "star", color: c.black }) }}>
@@ -605,7 +661,7 @@ export default function AdminPage() {
                 <p className="text-sm font-black uppercase tracking-wide" style={{ color: c.black }}>Pedidos recibidos</p>
                 <p className="text-xs mt-0.5" style={{ color: c.gray400 }}>{orders.length} pedido{orders.length !== 1 ? "s" : ""} en total</p>
               </div>
-              <SecondaryButton onClick={() => setOrders(getOrders())}>Actualizar</SecondaryButton>
+              <SecondaryButton onClick={() => { getOrders().then(setOrders).catch((e) => reportError("actualizar los pedidos", e)) }}>Actualizar</SecondaryButton>
             </div>
             {orders.length === 0 ? (
               <div className="py-20 text-center border" style={{ borderColor: c.gray200 }}>
@@ -625,7 +681,12 @@ export default function AdminPage() {
                       <div className="flex items-center gap-2">
                         <select
                           value={order.status}
-                          onChange={(e) => { updateOrderStatus(order.id, e.target.value as Order["status"]); setOrders(getOrders()) }}
+                          onChange={(e) => {
+                            const status = e.target.value as Order["status"]
+                            updateOrderStatus(order.id, status)
+                              .then(() => setOrders((prev) => prev.map((o) => o.id === order.id ? { ...o, status } : o)))
+                              .catch((err) => reportError("actualizar el pedido", err))
+                          }}
                           className="px-3 py-1.5 text-xs font-bold uppercase tracking-wide border outline-none"
                           style={inputStyle}
                         >
@@ -633,7 +694,11 @@ export default function AdminPage() {
                             <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
                           ))}
                         </select>
-                        <IconButton danger onClick={() => { deleteOrder(order.id); setOrders(getOrders()) }}>
+                        <IconButton danger onClick={() => {
+                          deleteOrder(order.id)
+                            .then(() => setOrders((prev) => prev.filter((o) => o.id !== order.id)))
+                            .catch((err) => reportError("borrar el pedido", err))
+                        }}>
                           <Trash2 size={13} />
                         </IconButton>
                       </div>

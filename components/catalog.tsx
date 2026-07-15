@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { Search } from "lucide-react"
-import { categories, type Product } from "@/lib/products"
-import { getProducts } from "@/lib/products-store"
+import { type Product, type Category } from "@/lib/products"
+import { getProducts, getCategories } from "@/lib/products-store"
 import { ProductCard } from "@/components/product-card"
 
 interface CatalogProps {
@@ -14,9 +14,11 @@ export function Catalog({ onAddToCart }: CatalogProps) {
   const [selectedCategory, setSelectedCategory] = useState("todos")
   const [search, setSearch] = useState("")
   const [products, setProducts] = useState<Product[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
 
   useEffect(() => {
-    setProducts(getProducts())
+    getProducts().then(setProducts).catch(() => {})
+    getCategories().then(setCategories).catch(() => {})
   }, [])
 
   const filtered = products.filter((p) => {

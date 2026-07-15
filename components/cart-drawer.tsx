@@ -152,7 +152,7 @@ export function CartDrawer({
     return lines.filter((l) => l !== null).join("\n")
   }
 
-  function handleSendOrder() {
+  async function handleSendOrder() {
     const order: Order = {
       id: orderId,
       createdAt: new Date().toISOString(),
@@ -178,7 +178,11 @@ export function CartDrawer({
       nota: form.nota || undefined,
       status: "pendiente",
     }
-    saveOrder(order)
+    try {
+      await saveOrder(order)
+    } catch (e) {
+      console.error("No se pudo registrar el pedido en el sistema:", e)
+    }
     onClear()
     setStep("sent")
   }
