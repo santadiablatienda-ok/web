@@ -312,12 +312,16 @@ export function CartDrawer({
                       className="flex gap-3 p-3"
                       style={{ backgroundColor: "#fff", border: "1px solid #E0E0E0" }}
                     >
-                      <img
-                        src={product.image}
-                        alt={product.imageAlt}
-                        className="w-16 h-16 object-cover flex-shrink-0"
-                        style={{ backgroundColor: "#F5F5F5" }}
-                      />
+                      {product.image ? (
+                        <img
+                          src={product.image}
+                          alt={product.imageAlt}
+                          className="w-16 h-16 object-cover flex-shrink-0"
+                          style={{ backgroundColor: "#F5F5F5" }}
+                        />
+                      ) : (
+                        <div className="w-16 h-16 flex-shrink-0" style={{ backgroundColor: "#F5F5F5" }} />
+                      )}
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-bold leading-snug" style={{ color: textPrimary }}>
                           {product.name}

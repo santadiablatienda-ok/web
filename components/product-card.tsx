@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { ShoppingCart, CheckCircle2, PackagePlus } from "lucide-react"
+import { useEffect, useState } from "react"
+import { ShoppingCart, CheckCircle2, PackagePlus, ChevronLeft, ChevronRight, X } from "lucide-react"
 import { type Product, formatPrice, finalPrice } from "@/lib/products"
 import { DEPOSIT_PERCENT } from "@/hooks/use-cart"
 
@@ -16,6 +16,32 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   const [added, setAdded] = useState(false)
   const [sizeError, setSizeError] = useState(false)
   const [colorError, setColorError] = useState(false)
+  const [galleryOpen, setGalleryOpen] = useState(false)
+  const [galleryIndex, setGalleryIndex] = useState(0)
+
+  const photos = [product.image, ...(product.gallery ?? [])].filter((src, i, arr) => src && arr.indexOf(src) === i)
+  const hasGallery = photos.length > 1
+
+  // precarga el resto de las fotos apenas se abre la galeria para que el paso entre fotos sea instantaneo
+  useEffect(() => {
+    if (!galleryOpen) return
+    photos.forEach((src) => {
+      const img = new window.Image()
+      img.src = src
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [galleryOpen])
+
+  function openGallery() {
+    setGalleryIndex(0)
+    setGalleryOpen(true)
+  }
+  function nextPhoto() {
+    setGalleryIndex((i) => (i + 1) % photos.length)
+  }
+  function prevPhoto() {
+    setGalleryIndex((i) => (i - 1 + photos.length) % photos.length)
+  }
 
   const isInactive = product.active === false
   const hasSizes = product.sizes && product.sizes.length > 0
@@ -72,13 +98,33 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   return (
     <article className="group flex flex-col bg-white overflow-hidden" style={{ border: "1px solid #EBEBEB" }}>
       {/* Image */}
-      <div className="relative overflow-hidden" style={{ aspectRatio: "3/4", backgroundColor: "#F5F5F5" }}>
-        <img
-          src={product.image}
-          alt={product.imageAlt}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          loading="lazy"
-        />
+      <div
+        className="relative overflow-hidden"
+        style={{ aspectRatio: "3/4", backgroundColor: "#F5F5F5", cursor: hasGallery ? "zoom-in" : undefined }}
+        onClick={hasGallery ? openGallery : undefined}
+      >
+        {product.image ? (
+          <img
+            src={product.image}
+            alt={product.imageAlt}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#B0B0B0", letterSpacing: "0.08em" }}>
+              Foto proximamente
+            </span>
+          </div>
+        )}
+        {hasGallery && (
+          <span
+            className="absolute bottom-3 right-3 px-2 py-1 text-[10px] font-bold uppercase tracking-wider"
+            style={{ backgroundColor: "rgba(0,0,0,0.6)", color: "#fff", letterSpacing: "0.06em" }}
+          >
+            +{photos.length - 1} fotos
+          </span>
+        )}
         {product.badge && (
           <span
             className="absolute top-3 left-3 px-2.5 py-1 text-xs font-bold uppercase tracking-wider"
@@ -283,6 +329,62 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
           </button>
         )}
       </div>
+
+      {galleryOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: "rgba(0,0,0,0.9)" }}
+          onClick={() => setGalleryOpen(false)}
+        >
+          <button
+            onClick={() => setGalleryOpen(false)}
+            aria-label="Cerrar"
+            className="absolute top-6 right-6 flex items-center justify-center w-10 h-10 border transition-all hover:bg-white hover:text-black"
+            style={{ borderColor: "rgba(255,255,255,0.4)", color: "#fff" }}
+          >
+            <X size={18} />
+          </button>
+
+          <img
+            src={photos[galleryIndex]}
+            alt={product.imageAlt || product.name}
+            className="max-w-[90vw] max-h-[80vh] object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+
+          <button
+            onClick={(e) => { e.stopPropagation(); prevPhoto() }}
+            aria-label="Foto anterior"
+            className="absolute left-4 md:left-8 flex items-center justify-center w-10 h-10 border transition-all hover:bg-white hover:text-black"
+            style={{ borderColor: "rgba(255,255,255,0.4)", color: "#fff" }}
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); nextPhoto() }}
+            aria-label="Foto siguiente"
+            className="absolute right-4 md:right-8 flex items-center justify-center w-10 h-10 border transition-all hover:bg-white hover:text-black"
+            style={{ borderColor: "rgba(255,255,255,0.4)", color: "#fff" }}
+          >
+            <ChevronRight size={18} />
+          </button>
+
+          <div className="absolute bottom-8 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+            {photos.map((src, i) => (
+              <button
+                key={src + i}
+                onClick={() => setGalleryIndex(i)}
+                aria-label={`Ver foto ${i + 1}`}
+                className="h-1.5 transition-all"
+                style={{
+                  width: i === galleryIndex ? "22px" : "8px",
+                  backgroundColor: i === galleryIndex ? "#fff" : "rgba(255,255,255,0.35)",
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </article>
   )
 }

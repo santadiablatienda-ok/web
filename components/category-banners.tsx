@@ -5,69 +5,66 @@ const banners = [
     id: "botas",
     label: "Botas.",
     image: "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1783568281440-47yriz.jpg",
-    dark: true,
   },
   {
     id: "samba",
     label: "Samba.",
     image: "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1783568321416-9a4il0.jpg",
-    dark: false,
   },
   {
     id: "zapatillas",
     label: "Zapatillas.",
     image: "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1783568285353-wxc227.jpg",
-    dark: true,
   },
   {
     id: "importados",
     label: "Importados.",
     image: "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1783736398590-r1vyjz.jpg",
-    dark: false,
   },
 ]
 
 export function CategoryBanners() {
   return (
     <section className="w-full">
-      {banners.map(({ id, label, image, dark }) => (
-        <a
-          key={id}
-          href={`#catalogo`}
-          className="relative block w-full overflow-hidden group"
-          style={{ height: "clamp(260px, 35vw, 420px)" }}
-          aria-label={`Ver categoria ${label}`}
-        >
-          <img
-            src={image}
-            alt={label}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            loading="lazy"
-            style={{ opacity: dark ? 0.5 : 0.75 }}
-          />
-          <div
-            className="absolute inset-0"
-            style={{
-              background: dark
-                ? "linear-gradient(to right, rgba(0,0,0,0.7) 0%, transparent 70%)"
-                : "linear-gradient(to right, rgba(255,255,255,0.85) 0%, transparent 60%)",
-            }}
-          />
-          <div className="absolute inset-0 flex items-end px-8 md:px-16 pb-8 md:pb-12">
-            <h2
-              className="font-black uppercase leading-none"
-              style={{
-                color: dark ? "#fff" : "#000",
-                fontSize: "clamp(3rem, 7vw, 6rem)",
-                letterSpacing: "-0.03em",
-                lineHeight: 0.9,
-              }}
-            >
-              {label}
-            </h2>
-          </div>
-        </a>
-      ))}
+      <div className="px-6 md:px-16 pt-14 pb-6">
+        <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#9E9E9E", letterSpacing: "0.2em" }}>
+          Explora
+        </p>
+        <h2 className="font-black uppercase leading-none mt-2" style={{ color: "#000", fontSize: "clamp(1.75rem, 4vw, 3rem)", letterSpacing: "-0.02em" }}>
+          Elegi tu categoria.
+        </h2>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-px" style={{ backgroundColor: "#EBEBEB" }}>
+        {banners.map((b) => (
+          <a
+            key={b.id}
+            href="#catalogo"
+            className="relative block w-full overflow-hidden group bg-white"
+            style={{ aspectRatio: "3/4" }}
+            aria-label={`Ver categoria ${b.label}`}
+          >
+            <img
+              src={b.image}
+              alt={b.label}
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              loading="lazy"
+            />
+            <div
+              className="absolute inset-0"
+              style={{ background: "linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 55%)" }}
+            />
+            <div className="absolute inset-x-0 bottom-0 p-4 md:p-6">
+              <h3
+                className="font-black uppercase leading-none"
+                style={{ color: "#fff", fontSize: "clamp(1.1rem, 2.5vw, 1.75rem)", letterSpacing: "-0.02em" }}
+              >
+                {b.label}
+              </h3>
+            </div>
+          </a>
+        ))}
+      </div>
     </section>
   )
 }
