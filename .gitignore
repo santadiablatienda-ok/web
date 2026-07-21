@@ -40,9 +40,10 @@ pnpm-debug.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# catalogo: backup zip (no se sube, pesa 300MB+)
+# catalogo: fotos/videos fuente, quedan solo en la compu (ya estan en Supabase Storage)
 /CATALOGO.rar
 CATALOGO/*.zip
+CATALOGO/**
 
 # planilla de pedidos: uso interno, no relacionado al sitio
 /PLANILLA DE PEDIDOS.xlsx
