@@ -6,6 +6,7 @@ import { Hero } from "@/components/hero"
 import { CategoryBanners } from "@/components/category-banners"
 import { FeaturedSection } from "@/components/featured-section"
 import { Catalog } from "@/components/catalog"
+import { ProductVideos } from "@/components/product-videos"
 import { EncargoSection } from "@/components/encargo-section"
 import { CartDrawer } from "@/components/cart-drawer"
 import { ContactBanner } from "@/components/contact-banner"
@@ -33,6 +34,7 @@ export default function HomePage() {
         <CategoryBanners />
         <FeaturedSection onAddToCart={handleAddToCart} />
         <Catalog onAddToCart={handleAddToCart} />
+        <ProductVideos />
         <EncargoSection />
         <PaymentMethods />
         <ContactBanner />

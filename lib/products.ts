@@ -8,6 +8,7 @@ export interface Product {
   image: string
   imageAlt: string
   gallery?: string[]
+  video?: string
   badge?: string
   featured?: boolean
   sizes?: string[]

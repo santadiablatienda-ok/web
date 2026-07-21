@@ -15,6 +15,7 @@ interface ProductRow {
   image: string
   image_alt: string
   gallery: string[]
+  video: string
   badge: string | null
   featured: boolean
   sizes: string[]
@@ -38,6 +39,7 @@ function rowToProduct(r: ProductRow): Product {
     image: r.image,
     imageAlt: r.image_alt,
     gallery: r.gallery?.length ? r.gallery : undefined,
+    video: r.video || undefined,
     badge: r.badge ?? undefined,
     featured: r.featured,
     sizes: r.sizes?.length ? r.sizes : undefined,
@@ -62,6 +64,7 @@ function productToRow(p: Product): ProductRow {
     image: p.image ?? "",
     image_alt: p.imageAlt ?? "",
     gallery: p.gallery ?? [],
+    video: p.video ?? "",
     badge: p.badge ?? null,
     featured: !!p.featured,
     sizes: p.sizes ?? [],
