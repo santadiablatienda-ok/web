@@ -6,7 +6,7 @@ import {
   ArrowRight, ArrowLeft, User, Package, CheckCircle2,
   Truck, Store, CreditCard, Banknote, Wallet, Hash
 } from "lucide-react"
-import { type CartItem, DEPOSIT_PERCENT } from "@/hooks/use-cart"
+import { type CartItem } from "@/hooks/use-cart"
 import { formatPrice, finalPrice } from "@/lib/products"
 import { saveOrder, type Order } from "@/lib/orders-store"
 
@@ -113,7 +113,7 @@ export function CartDrawer({
       .map((i) => {
         const size = i.selectedSize ? ` (Talle: ${i.selectedSize})` : ""
         const color = i.selectedColor ? ` (Color: ${i.selectedColor})` : ""
-        const tag = i.isBackorder ? ` [POR ENCARGO - seña ${DEPOSIT_PERCENT}%]` : ""
+        const tag = i.isBackorder ? ` [POR ENCARGO - sin pago por adelantado]` : ""
         return `  - ${i.product.name}${size}${color}${tag} x${i.quantity}  ${formatPrice(finalPrice(i.product) * i.quantity)}`
       })
       .join("\n")
@@ -137,7 +137,7 @@ export function CartDrawer({
       productLines,
       ``,
       `Total del pedido: ${formatPrice(totalPrice)}`,
-      hasBackorder ? `A abonar ahora (incluye seña ${DEPOSIT_PERCENT}% en items por encargo): ${formatPrice(depositTotal)}` : null,
+      hasBackorder ? `A abonar ahora: ${formatPrice(depositTotal)} (los items por encargo no llevan pago por adelantado, se coordina cuando se confirme stock en fabrica)` : null,
       ``,
       `Entrega`,
       `  ${shipping}`,
@@ -338,7 +338,7 @@ export function CartDrawer({
                         </p>
                         {isBackorder && (
                           <p className="text-xs font-bold mt-0.5" style={{ color: "#E63946" }}>
-                            Por encargo · seña {DEPOSIT_PERCENT}% ({formatPrice(Math.round(finalPrice(product) * quantity * DEPOSIT_PERCENT / 100))})
+                            Por encargo · sin pago por adelantado
                           </p>
                         )}
                         <div className="flex items-center justify-between mt-2">
@@ -525,7 +525,7 @@ export function CartDrawer({
                 </div>
                 {depositTotal !== totalPrice && (
                   <div className="flex justify-between text-sm font-black" style={{ color: "#E63946" }}>
-                    <span>A abonar ahora (seña {DEPOSIT_PERCENT}%)</span>
+                    <span>A abonar ahora</span>
                     <span>{formatPrice(depositTotal)}</span>
                   </div>
                 )}
@@ -612,7 +612,7 @@ export function CartDrawer({
             </div>
             {depositTotal !== totalPrice && (
               <p className="text-xs -mt-2" style={{ color: textMuted }}>
-                Incluye seña del {DEPOSIT_PERCENT}% en items por encargo. Total del pedido: {formatPrice(totalPrice)}
+                Los items por encargo no llevan pago por adelantado, se coordina cuando confirmemos stock en fabrica. Total del pedido: {formatPrice(totalPrice)}
               </p>
             )}
 

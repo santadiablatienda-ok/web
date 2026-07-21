@@ -37,7 +37,7 @@ const c = {
 
 function emptyProduct(): Omit<Product, "id"> {
   return {
-    name: "", description: "", price: 0, category: "botas",
+    name: "", description: "", price: 0, cost: 0, category: "botas",
     image: "", imageAlt: "", badge: "",
     featured: false, colors: [], sizes: [], sizeStock: {}, stock: 10, isEncargo: false, active: true,
     discountPercent: 0, season: "",
@@ -854,6 +854,76 @@ export default function AdminPage() {
               </div>
 
               <div className="border p-5" style={{ backgroundColor: c.white, borderColor: c.gray200 }}>
+                <p className="text-sm font-black uppercase tracking-wide mb-1" style={{ color: c.black }}>Inventario: costo, ganancia y stock</p>
+                <p className="text-xs mb-4" style={{ color: c.gray400 }}>Editá costo y stock acá mismo sin entrar producto por producto. El costo nunca se muestra en la tienda.</p>
+                <div className="max-h-[32rem] overflow-y-auto pr-1">
+                  <table className="w-full text-xs border-collapse">
+                    <thead>
+                      <tr className="text-left" style={{ color: c.gray400 }}>
+                        <th className="pb-2 pr-2 font-bold uppercase" style={{ letterSpacing: "0.04em" }}>Producto</th>
+                        <th className="pb-2 pr-2 font-bold uppercase" style={{ letterSpacing: "0.04em" }}>Costo</th>
+                        <th className="pb-2 pr-2 font-bold uppercase" style={{ letterSpacing: "0.04em" }}>Precio</th>
+                        <th className="pb-2 pr-2 font-bold uppercase" style={{ letterSpacing: "0.04em" }}>Ganancia</th>
+                        <th className="pb-2 font-bold uppercase" style={{ letterSpacing: "0.04em" }}>Stock</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[...products].sort((a, b) => a.name.localeCompare(b.name)).map((product) => {
+                        const usesSizeStock = !!product.sizeStock && Object.keys(product.sizeStock).length > 0
+                        const margin = product.price - (product.cost ?? 0)
+                        const marginPct = product.price > 0 ? Math.round((margin / product.price) * 100) : 0
+
+                        function patch(fields: Partial<Product>) {
+                          const updated = { ...product, ...fields }
+                          saveProducts([updated])
+                            .then(() => { setProducts((prev) => prev.map((p) => p.id === product.id ? updated : p)); triggerSaved() })
+                            .catch((e) => reportError("actualizar el producto", e))
+                        }
+
+                        return (
+                          <tr key={product.id} className="border-t" style={{ borderColor: c.gray100 }}>
+                            <td className="py-2 pr-2 max-w-[9rem] truncate font-semibold" style={{ color: c.black }} title={product.name}>
+                              {product.name}
+                            </td>
+                            <td className="py-2 pr-2">
+                              <input key={`${product.id}-cost-${product.cost ?? 0}`} type="number" min={0} defaultValue={product.cost ?? 0}
+                                onFocus={(e) => e.target.select()}
+                                onBlur={(e) => {
+                                  const v = Number(e.target.value)
+                                  if (v !== (product.cost ?? 0)) patch({ cost: v })
+                                }}
+                                className="w-20 px-2 py-1 border text-xs" style={inputStyle} />
+                            </td>
+                            <td className="py-2 pr-2 font-semibold" style={{ color: c.black }}>
+                              {formatPrice(product.price)}
+                            </td>
+                            <td className="py-2 pr-2 font-semibold" style={{ color: !product.cost ? c.gray400 : margin >= 0 ? c.success : c.accent }}>
+                              {product.cost ? `${formatPrice(margin)} (${marginPct}%)` : "—"}
+                            </td>
+                            <td className="py-2">
+                              {usesSizeStock ? (
+                                <span className="text-xs" style={{ color: c.gray400 }} title="Tiene stock por talle, editalo en Productos">
+                                  {productStock(product)} ud. (por talle)
+                                </span>
+                              ) : (
+                                <input key={`${product.id}-stock-${product.stock ?? 0}`} type="number" min={0} defaultValue={product.stock ?? 0}
+                                  onFocus={(e) => e.target.select()}
+                                  onBlur={(e) => {
+                                    const v = Number(e.target.value)
+                                    if (v !== (product.stock ?? 0)) patch({ stock: v })
+                                  }}
+                                  className="w-16 px-2 py-1 border text-xs" style={inputStyle} />
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="border p-5" style={{ backgroundColor: c.white, borderColor: c.gray200 }}>
                 <p className="text-sm font-black uppercase tracking-wide mb-4" style={{ color: c.black }}>Estado de pedidos</p>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-px" style={{ backgroundColor: c.gray200 }}>
                   {["pendiente","confirmado","enviado","entregado","cancelado"].map((status) => {
@@ -947,11 +1017,30 @@ function ProductForm({ form, setForm, categories, isNew, onSave, onCancel }: Pro
             className={inputClass + " resize-none"} style={inputStyle} />
         </div>
 
+        {/* Costo */}
+        <div className="flex flex-col gap-1.5">
+          <label className={labelClass} style={labelStyle}>Costo proveedor (ARS)</label>
+          <input type="number" min={0} value={form.cost ?? 0} onChange={(e) => f("cost", Number(e.target.value))}
+            placeholder="0" className={inputClass} style={inputStyle} />
+          <p className="text-xs" style={{ color: c.gray400 }}>Solo se ve acá en el admin, nunca en la tienda.</p>
+        </div>
+
         {/* Precio */}
         <div className="flex flex-col gap-1.5">
           <label className={labelClass} style={labelStyle}>Precio (ARS) *</label>
           <input type="number" min={0} value={form.price} onChange={(e) => f("price", Number(e.target.value))}
             placeholder="0" className={inputClass} style={inputStyle} />
+          {!!form.cost && form.cost > 0 && (
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <p className="text-xs font-semibold" style={{ color: form.price > form.cost ? c.success : c.accent }}>
+                Ganancia: {formatPrice(form.price - form.cost)} ({form.price > 0 ? Math.round(((form.price - form.cost) / form.price) * 100) : 0}% del precio)
+              </p>
+              <button type="button" onClick={() => f("price", Math.round(form.cost! * 1.55 / 100) * 100)}
+                className="text-xs font-bold underline" style={{ color: c.gray600 }}>
+                Usar sugerido (+55%): {formatPrice(Math.round(form.cost! * 1.55 / 100) * 100)}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Descuento */}

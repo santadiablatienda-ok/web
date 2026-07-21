@@ -3,6 +3,7 @@ export interface Product {
   name: string
   description: string
   price: number
+  cost?: number       // costo de compra al proveedor (ARS), solo visible en el admin
   category: string
   image: string
   imageAlt: string

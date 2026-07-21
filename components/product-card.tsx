@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import { ShoppingCart, CheckCircle2, PackagePlus, ChevronLeft, ChevronRight, X } from "lucide-react"
 import { type Product, formatPrice, finalPrice } from "@/lib/products"
-import { DEPOSIT_PERCENT } from "@/hooks/use-cart"
 
 interface ProductCardProps {
   product: Product
@@ -63,7 +62,8 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   const outOfStock = !isEncargo && totalStock === 0
 
   // si el producto trackea stock por talle, el estado de "sin stock" depende del talle elegido
-  const needsBackorder = isEncargo || (hasSizes && selectedSize ? stockForSize(selectedSize) <= 0 : outOfStock)
+  // los productos inactivos (sin precio/foto confirmada todavia) tambien se piden por encargo, no se bloquean
+  const needsBackorder = isInactive || isEncargo || (hasSizes && selectedSize ? stockForSize(selectedSize) <= 0 : outOfStock)
 
   function validateSelection(): boolean {
     let ok = true
@@ -137,19 +137,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
             {product.badge}
           </span>
         )}
-        {isInactive ? (
-          <div
-            className="absolute inset-0 flex items-center justify-center"
-            style={{ backgroundColor: "rgba(0,0,0,0.55)" }}
-          >
-            <span
-              className="text-xs font-bold uppercase tracking-widest px-4 py-2 border"
-              style={{ borderColor: "#fff", color: "#fff", letterSpacing: "0.15em" }}
-            >
-              Agotado
-            </span>
-          </div>
-        ) : outOfStock && !isEncargo && (
+        {!isInactive && outOfStock && !isEncargo && (
           <div
             className="absolute inset-0 flex items-center justify-center"
             style={{ backgroundColor: "rgba(0,0,0,0.55)" }}
@@ -162,13 +150,13 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
             </span>
           </div>
         )}
-        {!isInactive && isEncargo && (
+        {(isInactive || isEncargo) && (
           <div className="absolute top-3 right-3">
             <span
               className="text-xs font-bold uppercase tracking-wider px-2.5 py-1"
               style={{ backgroundColor: "#E63946", color: "#fff", letterSpacing: "0.06em" }}
             >
-              Encargo
+              Por encargo
             </span>
           </div>
         )}
@@ -189,9 +177,11 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <p className="text-lg font-black" style={{ color: "#000" }}>
-            {formatPrice(priceNow)}
-          </p>
+          {priceNow > 0 && (
+            <p className="text-lg font-black" style={{ color: "#000" }}>
+              {formatPrice(priceNow)}
+            </p>
+          )}
           {hasDiscount && (
             <>
               <p className="text-sm line-through" style={{ color: "#9E9E9E" }}>
@@ -208,7 +198,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
         </div>
 
         {/* Colores disponibles */}
-        {!isInactive && product.colors && product.colors.length > 0 && (
+        {product.colors && product.colors.length > 0 && (
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: "#5C5C5C", letterSpacing: "0.08em" }}>
               Color
@@ -248,7 +238,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
         )}
 
         {/* Tallas */}
-        {!isInactive && hasSizes && (
+        {hasSizes && (
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#5C5C5C", letterSpacing: "0.08em" }}>
               Talle
@@ -279,22 +269,14 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
             )}
             {usesSizeStock && selectedSize && stockForSize(selectedSize) <= 0 && (
               <p className="text-xs mt-1.5 font-semibold" style={{ color: "#E63946" }}>
-                Talle {selectedSize} sin stock — se agrega como pedido por encargo (seña {DEPOSIT_PERCENT}%)
+                Talle {selectedSize} sin stock — se agrega como pedido por encargo
               </p>
             )}
           </div>
         )}
 
         {/* CTA */}
-        {isInactive ? (
-          <button
-            disabled
-            className="flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-widest cursor-not-allowed"
-            style={{ backgroundColor: "#E0E0E0", color: "#9E9E9E", letterSpacing: "0.08em" }}
-          >
-            Agotado
-          </button>
-        ) : needsBackorder ? (
+        {needsBackorder ? (
           <button
             onClick={handleAdd}
             className="flex flex-col items-center justify-center gap-0.5 py-3 text-xs font-bold uppercase tracking-widest transition-opacity hover:opacity-80"
@@ -306,7 +288,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
               <>
                 <span className="flex items-center gap-2"><PackagePlus size={14} /> Pedir por encargo</span>
                 <span className="text-[10px] font-semibold normal-case tracking-normal opacity-70">
-                  Seña del {DEPOSIT_PERCENT}% · {formatPrice(Math.round(priceNow * DEPOSIT_PERCENT / 100))}
+                  Sin pago por adelantado · te contactamos por WhatsApp
                 </span>
               </>
             )}

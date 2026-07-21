@@ -8,11 +8,11 @@ export interface CartItem {
   quantity: number
   selectedSize?: string
   selectedColor?: string
-  isBackorder?: boolean // pedido por encargo por falta de stock: se abona el 100% por adelantado
+  isBackorder?: boolean // pedido por encargo por falta de stock: no se abona nada por adelantado, se coordina por WhatsApp una vez confirmado el stock en fabrica
 }
 
 const CART_KEY = "santa-diabla-cart"
-export const DEPOSIT_PERCENT = 100
+export const DEPOSIT_PERCENT = 0
 
 function cartKey(productId: string, size?: string, color?: string, isBackorder?: boolean): string {
   return `${productId}__${size ?? ""}__${color ?? ""}__${isBackorder ? "encargo" : "stock"}`
