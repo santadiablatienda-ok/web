@@ -894,8 +894,16 @@ export default function AdminPage() {
                                 }}
                                 className="w-20 px-2 py-1 border text-xs" style={inputStyle} />
                             </td>
-                            <td className="py-2 pr-2 font-semibold" style={{ color: c.black }}>
-                              {formatPrice(product.price)}
+                            <td className="py-2 pr-2">
+                              <input key={`${product.id}-price-${product.price}`} type="number" min={0} defaultValue={product.price}
+                                onFocus={(e) => e.target.select()}
+                                onBlur={(e) => {
+                                  const v = Number(e.target.value)
+                                  if (v === product.price) return
+                                  // si le cargan precio real a un producto inactivo, lo reactiva solo
+                                  patch(v > 0 && product.active === false ? { price: v, active: true } : { price: v })
+                                }}
+                                className="w-20 px-2 py-1 border text-xs font-semibold" style={inputStyle} />
                             </td>
                             <td className="py-2 pr-2 font-semibold" style={{ color: !product.cost ? c.gray400 : margin >= 0 ? c.success : c.accent }}>
                               {product.cost ? `${formatPrice(margin)} (${marginPct}%)` : "—"}
