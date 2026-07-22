@@ -12,6 +12,7 @@ interface CatalogProps {
 
 export function Catalog({ onAddToCart }: CatalogProps) {
   const [selectedCategory, setSelectedCategory] = useState("todos")
+  const [selectedBrand, setSelectedBrand] = useState("todas")
   const [search, setSearch] = useState("")
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
@@ -21,13 +22,18 @@ export function Catalog({ onAddToCart }: CatalogProps) {
     getCategories().then(setCategories).catch(() => {})
   }, [])
 
+  const brandsForCategory = Array.from(
+    new Set(products.filter((p) => p.category === selectedCategory && p.brand).map((p) => p.brand!))
+  ).sort()
+
   const filtered = products.filter((p) => {
     const matchesCategory = selectedCategory === "todos" || p.category === selectedCategory
+    const matchesBrand = selectedBrand === "todas" || p.brand === selectedBrand
     const matchesSearch =
       search === "" ||
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.description.toLowerCase().includes(search.toLowerCase())
-    return matchesCategory && matchesSearch
+    return matchesCategory && matchesBrand && matchesSearch
   })
 
   return (
@@ -68,11 +74,11 @@ export function Catalog({ onAddToCart }: CatalogProps) {
         </div>
 
         {/* Category filter */}
-        <div className="flex flex-wrap gap-2 mb-10">
+        <div className="flex flex-wrap gap-2 mb-4">
           {categories.map((cat) => (
             <button
               key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
+              onClick={() => { setSelectedCategory(cat.id); setSelectedBrand("todas") }}
               className="px-5 py-2 text-xs font-bold uppercase tracking-widest transition-all"
               style={{
                 letterSpacing: "0.1em",
@@ -85,6 +91,39 @@ export function Catalog({ onAddToCart }: CatalogProps) {
             </button>
           ))}
         </div>
+
+        {/* Brand filter (solo si la categoria tiene marcas cargadas) */}
+        {brandsForCategory.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-10">
+            <button
+              onClick={() => setSelectedBrand("todas")}
+              className="px-3 py-1 text-[11px] font-semibold uppercase tracking-wider transition-all"
+              style={{
+                letterSpacing: "0.06em",
+                backgroundColor: selectedBrand === "todas" ? "#000" : "transparent",
+                color: selectedBrand === "todas" ? "#fff" : "#5C5C5C",
+                border: `1px solid ${selectedBrand === "todas" ? "#000" : "#E0E0E0"}`,
+              }}
+            >
+              Todas las marcas
+            </button>
+            {brandsForCategory.map((brand) => (
+              <button
+                key={brand}
+                onClick={() => setSelectedBrand(brand)}
+                className="px-3 py-1 text-[11px] font-semibold uppercase tracking-wider transition-all"
+                style={{
+                  letterSpacing: "0.06em",
+                  backgroundColor: selectedBrand === brand ? "#000" : "transparent",
+                  color: selectedBrand === brand ? "#fff" : "#5C5C5C",
+                  border: `1px solid ${selectedBrand === brand ? "#000" : "#E0E0E0"}`,
+                }}
+              >
+                {brand}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Grid */}
         {filtered.length === 0 ? (

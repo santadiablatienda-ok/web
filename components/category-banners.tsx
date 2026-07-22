@@ -7,19 +7,19 @@ const banners = [
     image: "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1783568281440-47yriz.jpg",
   },
   {
-    id: "samba",
-    label: "Samba.",
-    image: "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1783568321416-9a4il0.jpg",
-  },
-  {
-    id: "zapatillas",
-    label: "Zapatillas.",
-    image: "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1783568285353-wxc227.jpg",
-  },
-  {
     id: "importados",
     label: "Importados.",
     image: "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1783736398590-r1vyjz.jpg",
+  },
+  {
+    id: "ojotas",
+    label: "Ojotas.",
+    image: "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784683497127-kutx0r.jpg",
+  },
+  {
+    id: "chicos",
+    label: "Chicos.",
+    image: "", // falta foto real, se carga cuando haya productos de la categoria chicos
   },
 ]
 
@@ -44,12 +44,16 @@ export function CategoryBanners() {
             style={{ aspectRatio: "3/4" }}
             aria-label={`Ver categoria ${b.label}`}
           >
-            <img
-              src={b.image}
-              alt={b.label}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              loading="lazy"
-            />
+            {b.image ? (
+              <img
+                src={b.image}
+                alt={b.label}
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                loading="lazy"
+              />
+            ) : (
+              <div className="w-full h-full" style={{ backgroundColor: "#111" }} />
+            )}
             <div
               className="absolute inset-0"
               style={{ background: "linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 55%)" }}

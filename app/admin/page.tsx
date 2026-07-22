@@ -37,7 +37,7 @@ const c = {
 
 function emptyProduct(): Omit<Product, "id"> {
   return {
-    name: "", description: "", price: 0, cost: 0, category: "botas",
+    name: "", description: "", price: 0, cost: 0, category: "botas", brand: "",
     image: "", imageAlt: "", badge: "",
     featured: false, colors: [], sizes: [], sizeStock: {}, stock: 10, isEncargo: false, active: true,
     discountPercent: 0, season: "",
@@ -1072,6 +1072,13 @@ function ProductForm({ form, setForm, categories, isNew, onSave, onCancel }: Pro
               <option key={cat.id} value={cat.id}>{cat.name}</option>
             ))}
           </select>
+        </div>
+
+        {/* Marca (para el sub-filtro dentro de Importados) */}
+        <div className="flex flex-col gap-1.5">
+          <label className={labelClass} style={labelStyle}>Marca</label>
+          <input type="text" value={form.brand ?? ""} onChange={(e) => f("brand", e.target.value)}
+            placeholder="Ej: Adidas, Nike, Jordan..." className={inputClass} style={inputStyle} />
         </div>
 
         {/* Imagen */}

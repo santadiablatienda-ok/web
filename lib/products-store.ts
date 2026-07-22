@@ -12,6 +12,7 @@ interface ProductRow {
   price: number
   cost: number
   category: string
+  brand: string
   image: string
   image_alt: string
   gallery: string[]
@@ -36,6 +37,7 @@ function rowToProduct(r: ProductRow): Product {
     price: r.price,
     cost: r.cost ?? undefined,
     category: r.category,
+    brand: r.brand || undefined,
     image: r.image,
     imageAlt: r.image_alt,
     gallery: r.gallery?.length ? r.gallery : undefined,
@@ -61,6 +63,7 @@ function productToRow(p: Product): ProductRow {
     price: p.price ?? 0,
     cost: p.cost ?? 0,
     category: p.category,
+    brand: p.brand ?? "",
     image: p.image ?? "",
     image_alt: p.imageAlt ?? "",
     gallery: p.gallery ?? [],

@@ -16,8 +16,9 @@ export function Header({ cartCount, onCartOpen }: HeaderProps) {
     { label: "Inicio",      href: "#inicio" },
     { label: "Catalogo",    href: "#catalogo" },
     { label: "Botas",       href: "#botas" },
-    { label: "Zapatillas",  href: "#zapatillas" },
     { label: "Importados",  href: "#importados" },
+    { label: "Ojotas",      href: "#ojotas" },
+    { label: "Chicos",      href: "#chicos" },
     { label: "Por Encargo", href: "#encargo" },
   ]
 

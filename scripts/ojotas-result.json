@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Adilette",
+    "image": "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784683497127-kutx0r.jpg",
+    "gallery": [
+      "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784683497569-1azsq3.jpg",
+      "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784683497811-bk9109.jpg",
+      "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784683498334-xe73fe.jpg"
+    ]
+  },
+  {
+    "name": "Gomones",
+    "image": "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784683498601-ty73ik.jpg",
+    "gallery": [
+      "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784683498839-jjh412.jpg",
+      "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784683499123-3j93gp.jpg",
+      "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784683499375-95bnqv.jpg",
+      "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784683499621-vxckdr.jpg",
+      "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784683499856-6mncy7.jpg",
+      "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784683500084-g31cjl.jpg",
+      "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784683500319-wkjbh5.jpg",
+      "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784683500652-195mxg.jpg",
+      "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784683500887-e3zc1f.jpg"
+    ]
+  }
+]

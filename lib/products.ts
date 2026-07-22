@@ -5,6 +5,7 @@ export interface Product {
   price: number
   cost?: number       // costo de compra al proveedor (ARS), solo visible en el admin
   category: string
+  brand?: string      // marca del producto (solo relevante en categoria "importados"), para el sub-filtro
   image: string
   imageAlt: string
   gallery?: string[]
@@ -37,9 +38,9 @@ export const categories: Category[] = [
   { id: "todos",      name: "Todos",        icon: "sparkles", color: "#000000" },
   { id: "botas",      name: "Botas",        icon: "boot",     color: "#111111" },
   { id: "borcegos",   name: "Borcegos",     icon: "shoe",     color: "#333333" },
-  { id: "zapatillas", name: "Zapatillas",   icon: "sneaker",  color: "#555555" },
-  { id: "samba",      name: "Samba",        icon: "sneaker",  color: "#6B4C2A" },
   { id: "importados", name: "Importados",   icon: "star",     color: "#777777" },
+  { id: "ojotas",     name: "Ojotas",       icon: "sneaker",  color: "#B8790A" },
+  { id: "chicos",     name: "Chicos",       icon: "sneaker",  color: "#1B8354" },
   { id: "encargo",    name: "Por Encargo",  icon: "tag",      color: "#E63946" },
 ]
 
