@@ -98,7 +98,7 @@ export function Header({ cartCount, onCartOpen, onSearchSubmit }: HeaderProps) {
           {/* Inicio */}
           <a
             href="#inicio"
-            className="hidden sm:inline text-xs font-semibold uppercase tracking-wider transition-opacity hover:opacity-50 whitespace-nowrap flex-shrink-0"
+            className="inline text-xs font-semibold uppercase tracking-wider transition-opacity hover:opacity-50 whitespace-nowrap flex-shrink-0"
             style={{ color: "#000", letterSpacing: "0.08em" }}
           >
             Inicio
@@ -122,7 +122,7 @@ export function Header({ cartCount, onCartOpen, onSearchSubmit }: HeaderProps) {
           </form>
 
           {/* Actions */}
-          <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex items-center gap-3 ml-auto md:ml-0 flex-shrink-0">
             <button
               onClick={onCartOpen}
               className="relative flex items-center justify-center w-10 h-10 transition-opacity hover:opacity-60"
@@ -143,14 +143,14 @@ export function Header({ cartCount, onCartOpen, onSearchSubmit }: HeaderProps) {
         </nav>
 
         {/* Barra de busqueda mobile */}
-        <form onSubmit={handleSearchSubmit} className="relative px-4 pb-3 md:hidden">
-          <Search size={14} className="absolute left-7 top-1/2 -translate-y-1/2" style={{ color: "#9E9E9E" }} />
+        <form onSubmit={handleSearchSubmit} className="relative px-4 pb-3.5 md:hidden">
+          <Search size={16} className="absolute left-8 top-1/2 -translate-y-1/2" style={{ color: "#9E9E9E" }} />
           <input
             type="text"
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
             placeholder="Buscar productos..."
-            className="w-full pl-9 pr-3 py-2 text-xs outline-none transition-all rounded-full"
+            className="w-full pl-11 pr-4 py-2.5 text-sm outline-none transition-all rounded-full"
             style={{
               backgroundColor: "#F5F5F5",
               border: "1px solid #E0E0E0",
