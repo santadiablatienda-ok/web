@@ -236,7 +236,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
                   <span
                     key={color}
                     className="px-2.5 py-1 text-xs font-semibold border"
-                    style={{ borderColor: "#E0E0E0", color: "#5C5C5C" }}
+                    style={{ borderColor: "#000", backgroundColor: "#000", color: "#fff" }}
                   >
                     {color}
                   </span>
