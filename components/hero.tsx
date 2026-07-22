@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState, useCallback } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { getProducts } from "@/lib/products-store"
 import { type Product } from "@/lib/products"
@@ -39,10 +39,6 @@ export function Hero() {
 
   const current = slides[index]
 
-  const fallbackImage = "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=1400&q=80"
-
-  const bgImage = useMemo(() => current?.image || fallbackImage, [current])
-
   return (
     <section
       id="inicio"
@@ -53,19 +49,15 @@ export function Hero() {
     >
       {/* Background image crossfade */}
       <div className="absolute inset-0">
-        {slides.length > 0 ? (
-          slides.map((p, i) => (
-            <img
-              key={p.id}
-              src={p.image || fallbackImage}
-              alt={p.imageAlt || p.name}
-              className="absolute inset-0 w-full h-full object-cover transition-opacity duration-[1200ms] ease-in-out"
-              style={{ opacity: i === index ? 0.45 : 0 }}
-            />
-          ))
-        ) : (
-          <img src={fallbackImage} alt="Calzado de moda Santa Diabla" className="w-full h-full object-cover" style={{ opacity: 0.45 }} />
-        )}
+        {slides.map((p, i) => (
+          <img
+            key={p.id}
+            src={p.image}
+            alt={p.imageAlt || p.name}
+            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-[1200ms] ease-in-out"
+            style={{ opacity: i === index ? 0.45 : 0 }}
+          />
+        ))}
       </div>
 
       {/* Content */}
