@@ -42,8 +42,8 @@ export function Header({ cartCount, onCartOpen, onSearchSubmit }: HeaderProps) {
       <header className="sticky top-0 z-50 w-full border-b" style={{ backgroundColor: "#fff", borderColor: "#E0E0E0" }}>
         <nav className="flex items-center gap-4 md:gap-6 px-4 md:px-8 py-3.5 max-w-7xl mx-auto">
 
-          {/* Menu desplegable + Inicio */}
-          <div className="relative flex items-center gap-4 flex-shrink-0">
+          {/* Menu desplegable */}
+          <div className="relative flex items-center flex-shrink-0">
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="flex items-center justify-center p-1.5 transition-opacity hover:opacity-60"
@@ -53,14 +53,6 @@ export function Header({ cartCount, onCartOpen, onSearchSubmit }: HeaderProps) {
             >
               {menuOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
-
-            <a
-              href="#inicio"
-              className="hidden sm:inline text-xs font-semibold uppercase tracking-wider transition-opacity hover:opacity-50 whitespace-nowrap"
-              style={{ color: "#000", letterSpacing: "0.08em" }}
-            >
-              Inicio
-            </a>
 
             {menuOpen && (
               <>
@@ -103,15 +95,24 @@ export function Header({ cartCount, onCartOpen, onSearchSubmit }: HeaderProps) {
             Santa Diabla.
           </Link>
 
+          {/* Inicio */}
+          <a
+            href="#inicio"
+            className="hidden sm:inline text-xs font-semibold uppercase tracking-wider transition-opacity hover:opacity-50 whitespace-nowrap flex-shrink-0"
+            style={{ color: "#000", letterSpacing: "0.08em" }}
+          >
+            Inicio
+          </a>
+
           {/* Barra de busqueda */}
-          <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-xs mx-auto hidden md:block">
-            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: "#9E9E9E" }} />
+          <form onSubmit={handleSearchSubmit} className="relative flex-1 hidden md:block">
+            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: "#9E9E9E" }} />
             <input
               type="text"
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
               placeholder="Buscar productos..."
-              className="w-full pl-9 pr-3 py-2 text-xs outline-none transition-all rounded-full focus:ring-1"
+              className="w-full pl-11 pr-4 py-2.5 text-sm outline-none transition-all rounded-full focus:ring-1"
               style={{
                 backgroundColor: "#F5F5F5",
                 border: "1px solid #E0E0E0",
@@ -121,7 +122,7 @@ export function Header({ cartCount, onCartOpen, onSearchSubmit }: HeaderProps) {
           </form>
 
           {/* Actions */}
-          <div className="flex items-center gap-3 ml-auto flex-shrink-0">
+          <div className="flex items-center gap-3 flex-shrink-0">
             <button
               onClick={onCartOpen}
               className="relative flex items-center justify-center w-10 h-10 transition-opacity hover:opacity-60"
