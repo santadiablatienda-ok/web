@@ -36,13 +36,13 @@ export function AboutSection() {
             forma de expresión.
           </p>
           <p>
-            Con el tiempo, esa misma actitud empezó a calzar a toda la familia. Hoy en SANTA DIABLA también
-            encontrás estilo para él y para los más chicos, porque la personalidad no tiene edad ni
-            género — se elige, se usa y se lleva puesta.
+            Con el tiempo, esa misma actitud empezó a calzar a todas las personas. Hoy en SANTA DIABLA
+            también encontrás estilo para él y para los más chicos, porque la personalidad no tiene edad
+            ni género — se elige, se usa y se lleva puesta.
           </p>
           <p className="font-semibold" style={{ color: "#000" }}>
             SANTA DIABLA es ese equilibrio entre lo delicado y lo atrevido, entre lo clásico y lo diferente.
-            Para toda la familia que sabe lo que quiere.
+            Para quien sabe lo que quiere.
           </p>
         </div>
       </div>
