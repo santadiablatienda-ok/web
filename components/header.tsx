@@ -14,6 +14,7 @@ export function Header({ cartCount, onCartOpen }: HeaderProps) {
 
   const navLinks = [
     { label: "Inicio",      href: "#inicio" },
+    { label: "Nosotros",    href: "#nosotros" },
     { label: "Catalogo",    href: "#catalogo" },
     { label: "Botas",       href: "#botas" },
     { label: "Importados",  href: "#importados" },
