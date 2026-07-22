@@ -1,0 +1,46 @@
+[
+  {
+    "name": "Nike Air Force (Niño)",
+    "image": "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784684494284-minzhd.jpg",
+    "gallery": []
+  },
+  {
+    "name": "Vans (Niño)",
+    "image": "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784684495205-qt8lms.jpg",
+    "gallery": []
+  },
+  {
+    "name": "Adidas Samba (Niño)",
+    "image": "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784684495624-varvsd.jpg",
+    "gallery": [
+      "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784684496309-5tiuiu.jpg"
+    ]
+  },
+  {
+    "name": "Adidas Running (Niño)",
+    "image": "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784684496599-aiaw4g.jpg",
+    "gallery": [
+      "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784684496991-5acnwb.jpg"
+    ]
+  },
+  {
+    "name": "Adidas Campus (Niño)",
+    "image": "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784684497639-8477zh.jpg",
+    "gallery": []
+  },
+  {
+    "name": "DC (Niño)",
+    "image": "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784684497861-qa8nh5.jpg",
+    "gallery": []
+  },
+  {
+    "name": "Nike Air Max (Niño)",
+    "image": "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784684498131-g3ksdf.jpg",
+    "gallery": []
+  },
+  {
+    "name": "Nike Presto (Niño)",
+    "image": "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784684498478-sn06uo.jpg",
+    "gallery": []
+  }
+]

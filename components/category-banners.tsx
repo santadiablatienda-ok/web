@@ -19,7 +19,7 @@ const banners = [
   {
     id: "chicos",
     label: "Chicos.",
-    image: "", // falta foto real, se carga cuando haya productos de la categoria chicos
+    image: "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784684495624-varvsd.jpg",
   },
 ]
 
