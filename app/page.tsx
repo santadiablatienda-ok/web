@@ -19,7 +19,13 @@ import { type Product } from "@/lib/products"
 
 export default function HomePage() {
   const [cartOpen, setCartOpen] = useState(false)
+  const [search, setSearch] = useState("")
   const { items, totalItems, totalPrice, depositTotal, addToCart, removeFromCart, updateQuantity, clearCart } = useCart()
+
+  function handleHeaderSearchSubmit(value: string) {
+    setSearch(value)
+    document.getElementById("catalogo")?.scrollIntoView({ behavior: "smooth" })
+  }
 
   function handleAddToCart(product: Product, quantity = 1, selectedSize?: string, isBackorder = false, selectedColor?: string) {
     addToCart(product, quantity, selectedSize, isBackorder, selectedColor)
@@ -28,14 +34,14 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header cartCount={totalItems} onCartOpen={() => setCartOpen(true)} />
+      <Header cartCount={totalItems} onCartOpen={() => setCartOpen(true)} onSearchSubmit={handleHeaderSearchSubmit} />
 
       <main className="flex-1">
         <Hero />
         <CategoryBanners />
         <AboutSection />
         <FeaturedSection onAddToCart={handleAddToCart} />
-        <Catalog onAddToCart={handleAddToCart} />
+        <Catalog onAddToCart={handleAddToCart} search={search} onSearchChange={setSearch} />
         <ProductVideos />
         <EncargoSection />
         <PaymentMethods />

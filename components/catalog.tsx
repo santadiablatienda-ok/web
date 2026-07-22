@@ -8,12 +8,13 @@ import { ProductCard } from "@/components/product-card"
 
 interface CatalogProps {
   onAddToCart: (product: Product, quantity: number, selectedSize?: string, isBackorder?: boolean, selectedColor?: string) => void
+  search: string
+  onSearchChange: (value: string) => void
 }
 
-export function Catalog({ onAddToCart }: CatalogProps) {
+export function Catalog({ onAddToCart, search, onSearchChange }: CatalogProps) {
   const [selectedCategory, setSelectedCategory] = useState("todos")
   const [selectedBrand, setSelectedBrand] = useState("todas")
-  const [search, setSearch] = useState("")
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
 
@@ -63,7 +64,7 @@ export function Catalog({ onAddToCart }: CatalogProps) {
             type="text"
             placeholder="Buscar..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => onSearchChange(e.target.value)}
             className="w-full pl-11 pr-4 py-3 text-sm outline-none transition-all"
             style={{
               backgroundColor: "#fff",

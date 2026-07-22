@@ -2,18 +2,19 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { ShoppingCart, Menu, X, Settings } from "lucide-react"
+import { ShoppingCart, Menu, X, Settings, Search } from "lucide-react"
 
 interface HeaderProps {
   cartCount: number
   onCartOpen: () => void
+  onSearchSubmit: (value: string) => void
 }
 
-export function Header({ cartCount, onCartOpen }: HeaderProps) {
+export function Header({ cartCount, onCartOpen, onSearchSubmit }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [searchValue, setSearchValue] = useState("")
 
-  const navLinks = [
-    { label: "Inicio",      href: "#inicio" },
+  const menuLinks = [
     { label: "Nosotros",    href: "#nosotros" },
     { label: "Catalogo",    href: "#catalogo" },
     { label: "Botas",       href: "#botas" },
@@ -22,6 +23,11 @@ export function Header({ cartCount, onCartOpen }: HeaderProps) {
     { label: "Chicos",      href: "#chicos" },
     { label: "Por Encargo", href: "#encargo" },
   ]
+
+  function handleSearchSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    onSearchSubmit(searchValue)
+  }
 
   return (
     <>
@@ -34,54 +40,88 @@ export function Header({ cartCount, onCartOpen }: HeaderProps) {
       </div>
 
       <header className="sticky top-0 z-50 w-full border-b" style={{ backgroundColor: "#fff", borderColor: "#E0E0E0" }}>
-        <nav className="flex items-center justify-between px-4 md:px-8 py-3.5 max-w-7xl mx-auto">
+        <nav className="flex items-center gap-4 md:gap-6 px-4 md:px-8 py-3.5 max-w-7xl mx-auto">
 
-          {/* Hamburger mobile */}
-          <button
-            className="md:hidden p-1.5"
-            style={{ color: "#000" }}
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-label="Abrir menu"
-          >
-            {menuOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
+          {/* Menu desplegable + Inicio */}
+          <div className="relative flex items-center gap-4 flex-shrink-0">
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="flex items-center justify-center p-1.5 transition-opacity hover:opacity-60"
+              style={{ color: "#000" }}
+              aria-label="Abrir menu"
+              aria-expanded={menuOpen}
+            >
+              {menuOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
+
+            <a
+              href="#inicio"
+              className="hidden sm:inline text-xs font-semibold uppercase tracking-wider transition-opacity hover:opacity-50 whitespace-nowrap"
+              style={{ color: "#000", letterSpacing: "0.08em" }}
+            >
+              Inicio
+            </a>
+
+            {menuOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+                <div
+                  className="absolute left-0 top-full mt-3 z-50 w-56 py-2 shadow-lg border"
+                  style={{ backgroundColor: "#fff", borderColor: "#E0E0E0" }}
+                >
+                  {menuLinks.map((link) => (
+                    <a
+                      key={link.label}
+                      href={link.href}
+                      onClick={() => setMenuOpen(false)}
+                      className="block px-5 py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors hover:bg-black hover:text-white"
+                      style={{ color: "#000", letterSpacing: "0.08em" }}
+                    >
+                      {link.label}
+                    </a>
+                  ))}
+                  <Link
+                    href="/admin/login"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-1.5 px-5 py-2.5 mt-1 border-t text-xs font-semibold"
+                    style={{ color: "#9E9E9E", borderColor: "#EBEBEB" }}
+                  >
+                    <Settings size={12} />
+                    Admin
+                  </Link>
+                </div>
+              </>
+            )}
+          </div>
 
           {/* Logo */}
           <Link
             href="#inicio"
-            className="text-xl font-black tracking-tight uppercase"
+            className="text-xl font-black tracking-tight uppercase flex-shrink-0"
             style={{ color: "#000", letterSpacing: "-0.02em" }}
           >
             Santa Diabla.
           </Link>
 
-          {/* Desktop nav */}
-          <ul className="hidden md:flex items-center gap-7">
-            {navLinks.map((link) => (
-              <li key={link.label}>
-                <a
-                  href={link.href}
-                  className="text-xs font-semibold uppercase tracking-wider transition-opacity hover:opacity-50"
-                  style={{ color: "#000", letterSpacing: "0.08em" }}
-                >
-                  {link.label}
-                </a>
-              </li>
-            ))}
-          </ul>
+          {/* Barra de busqueda */}
+          <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-xs mx-auto hidden md:block">
+            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: "#9E9E9E" }} />
+            <input
+              type="text"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              placeholder="Buscar productos..."
+              className="w-full pl-9 pr-3 py-2 text-xs outline-none transition-all rounded-full focus:ring-1"
+              style={{
+                backgroundColor: "#F5F5F5",
+                border: "1px solid #E0E0E0",
+                color: "#000",
+              }}
+            />
+          </form>
 
           {/* Actions */}
-          <div className="flex items-center gap-3">
-            <Link
-              href="/admin/login"
-              className="hidden md:flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 border transition-all hover:bg-black hover:text-white"
-              style={{ borderColor: "#E0E0E0", color: "#5C5C5C" }}
-              aria-label="Panel admin"
-            >
-              <Settings size={12} />
-              Admin
-            </Link>
-
+          <div className="flex items-center gap-3 ml-auto flex-shrink-0">
             <button
               onClick={onCartOpen}
               className="relative flex items-center justify-center w-10 h-10 transition-opacity hover:opacity-60"
@@ -101,31 +141,22 @@ export function Header({ cartCount, onCartOpen }: HeaderProps) {
           </div>
         </nav>
 
-        {/* Mobile menu */}
-        {menuOpen && (
-          <div className="md:hidden border-t px-6 py-4 flex flex-col gap-1" style={{ backgroundColor: "#fff", borderColor: "#E0E0E0" }}>
-            {navLinks.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                className="text-sm font-semibold uppercase tracking-wider py-3 border-b transition-opacity hover:opacity-50"
-                style={{ color: "#000", borderColor: "#EBEBEB", letterSpacing: "0.08em" }}
-                onClick={() => setMenuOpen(false)}
-              >
-                {link.label}
-              </a>
-            ))}
-            <Link
-              href="/admin/login"
-              className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold"
-              style={{ color: "#9E9E9E" }}
-              onClick={() => setMenuOpen(false)}
-            >
-              <Settings size={12} />
-              Admin
-            </Link>
-          </div>
-        )}
+        {/* Barra de busqueda mobile */}
+        <form onSubmit={handleSearchSubmit} className="relative px-4 pb-3 md:hidden">
+          <Search size={14} className="absolute left-7 top-1/2 -translate-y-1/2" style={{ color: "#9E9E9E" }} />
+          <input
+            type="text"
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            placeholder="Buscar productos..."
+            className="w-full pl-9 pr-3 py-2 text-xs outline-none transition-all rounded-full"
+            style={{
+              backgroundColor: "#F5F5F5",
+              border: "1px solid #E0E0E0",
+              color: "#000",
+            }}
+          />
+        </form>
       </header>
     </>
   )
