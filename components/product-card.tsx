@@ -174,6 +174,20 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
           <p className="text-xs leading-relaxed mt-1" style={{ color: "#9E9E9E" }}>
             {product.description}
           </p>
+          {product.specs && product.specs.length > 0 && (
+            <ul className="mt-2 flex flex-col gap-0.5">
+              {product.specs.map((spec) => (
+                <li
+                  key={spec}
+                  className="text-[11px] leading-relaxed pl-3 relative"
+                  style={{ color: "#5C5C5C" }}
+                >
+                  <span className="absolute left-0" style={{ color: "#B0B0B0" }}>·</span>
+                  {spec}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">

@@ -37,7 +37,7 @@ const c = {
 
 function emptyProduct(): Omit<Product, "id"> {
   return {
-    name: "", description: "", price: 0, cost: 0, category: "botas", brand: "",
+    name: "", description: "", specs: [], price: 0, cost: 0, category: "botas", brand: "",
     image: "", imageAlt: "", badge: "",
     featured: false, colors: [], sizes: [], sizeStock: {}, stock: 10, isEncargo: false, active: true,
     discountPercent: 0, season: "",
@@ -1022,6 +1022,14 @@ function ProductForm({ form, setForm, categories, isNew, onSave, onCancel }: Pro
           <label className={labelClass} style={labelStyle}>Descripción</label>
           <textarea value={form.description} onChange={(e) => f("description", e.target.value)}
             placeholder="Descripción del producto..." rows={2}
+            className={inputClass + " resize-none"} style={inputStyle} />
+        </div>
+
+        {/* Especificaciones */}
+        <div className="flex flex-col gap-1.5 md:col-span-2">
+          <label className={labelClass} style={labelStyle}>Especificaciones (una por línea)</label>
+          <textarea value={(form.specs ?? []).join("\n")} onChange={(e) => f("specs", e.target.value.split("\n"))}
+            placeholder={"Ej: Empeine de cuero\nSuela de goma antideslizante\nCierre de cordones"} rows={4}
             className={inputClass + " resize-none"} style={inputStyle} />
         </div>
 

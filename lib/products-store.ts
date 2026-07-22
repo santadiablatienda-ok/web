@@ -9,6 +9,7 @@ interface ProductRow {
   id: string
   name: string
   description: string
+  specs: string[]
   price: number
   cost: number
   category: string
@@ -34,6 +35,7 @@ function rowToProduct(r: ProductRow): Product {
     id: r.id,
     name: r.name,
     description: r.description,
+    specs: r.specs?.length ? r.specs : undefined,
     price: r.price,
     cost: r.cost ?? undefined,
     category: r.category,
@@ -60,6 +62,7 @@ function productToRow(p: Product): ProductRow {
     id: p.id,
     name: p.name,
     description: p.description ?? "",
+    specs: (p.specs ?? []).map((s) => s.trim()).filter(Boolean),
     price: p.price ?? 0,
     cost: p.cost ?? 0,
     category: p.category,

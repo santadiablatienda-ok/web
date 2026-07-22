@@ -2,6 +2,7 @@ export interface Product {
   id: string
   name: string
   description: string
+  specs?: string[]     // detalles tecnicos cortos, uno por linea (material, suela, cierre, etc.)
   price: number
   cost?: number       // costo de compra al proveedor (ARS), solo visible en el admin
   category: string
