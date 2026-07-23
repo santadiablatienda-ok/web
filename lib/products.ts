@@ -42,7 +42,8 @@ export const categories: Category[] = [
   { id: "importados", name: "Importados",   icon: "star",     color: "#777777" },
   { id: "ojotas",     name: "Ojotas",       icon: "sneaker",  color: "#B8790A" },
   { id: "chicos",     name: "Chicos",       icon: "sneaker",  color: "#1B8354" },
-  { id: "encargo",    name: "Por Encargo",  icon: "tag",      color: "#E63946" },
+  { id: "sandalias",  name: "Sandalias",    icon: "sneaker",  color: "#C2703D" },
+  { id: "suecos",     name: "Suecos",       icon: "shoe",     color: "#5B6B8C" },
 ]
 
 const SIZES_MUJER = ["35", "36", "37", "38", "39", "40"]

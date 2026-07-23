@@ -7,6 +7,11 @@ const banners = [
     image: "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1783568281440-47yriz.jpg",
   },
   {
+    id: "borcegos",
+    label: "Borcegos.",
+    image: "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784743464526-zc91xw.jpg",
+  },
+  {
     id: "importados",
     label: "Importados.",
     image: "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1783736398590-r1vyjz.jpg",
@@ -20,6 +25,16 @@ const banners = [
     id: "chicos",
     label: "Chicos.",
     image: "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784684495624-varvsd.jpg",
+  },
+  {
+    id: "sandalias",
+    label: "Sandalias.",
+    image: "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784766148502-y9lwna.jpg",
+  },
+  {
+    id: "suecos",
+    label: "Suecos.",
+    image: "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784766149255-swont7.jpg",
   },
 ]
 

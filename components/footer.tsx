@@ -59,9 +59,12 @@ export function Footer() {
                 { label: "Inicio",        href: "#inicio" },
                 { label: "Catalogo",      href: "#catalogo" },
                 { label: "Botas",         href: "#botas" },
+                { label: "Borcegos",      href: "#borcegos" },
                 { label: "Importados",    href: "#importados" },
                 { label: "Ojotas",        href: "#ojotas" },
                 { label: "Chicos",        href: "#chicos" },
+                { label: "Sandalias",     href: "#sandalias" },
+                { label: "Suecos",        href: "#suecos" },
                 { label: "Por Encargo",   href: "#encargo" },
               ].map(({ label, href }) => (
                 <li key={label}>
