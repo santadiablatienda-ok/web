@@ -1,5 +1,7 @@
 import { supabase } from "@/lib/supabase"
 
+export type PaymentStatus = "no_aplica" | "pendiente" | "aprobado" | "rechazado" | "en_proceso"
+
 export interface Order {
   id: string
   createdAt: string
@@ -16,6 +18,9 @@ export interface Order {
   paymentType: string
   nota?: string
   status: "pendiente" | "confirmado" | "enviado" | "entregado" | "cancelado"
+  paymentStatus?: PaymentStatus
+  mpPreferenceId?: string
+  mpPaymentId?: string
 }
 
 interface OrderRow {
@@ -34,6 +39,9 @@ interface OrderRow {
   payment_type: string | null
   nota: string | null
   status: Order["status"]
+  payment_status: PaymentStatus | null
+  mp_preference_id: string | null
+  mp_payment_id: string | null
 }
 
 function rowToOrder(r: OrderRow): Order {
@@ -53,6 +61,9 @@ function rowToOrder(r: OrderRow): Order {
     paymentType: r.payment_type ?? "",
     nota: r.nota ?? undefined,
     status: r.status,
+    paymentStatus: r.payment_status ?? undefined,
+    mpPreferenceId: r.mp_preference_id ?? undefined,
+    mpPaymentId: r.mp_payment_id ?? undefined,
   }
 }
 
@@ -79,6 +90,9 @@ export async function saveOrder(order: Order): Promise<void> {
     payment_type: order.paymentType,
     nota: order.nota ?? null,
     status: order.status,
+    payment_status: order.paymentStatus ?? "no_aplica",
+    mp_preference_id: order.mpPreferenceId ?? null,
+    mp_payment_id: order.mpPaymentId ?? null,
   }
   const { error } = await supabase.from("orders").insert(row)
   if (error) throw error
@@ -86,6 +100,13 @@ export async function saveOrder(order: Order): Promise<void> {
 
 export async function updateOrderStatus(id: string, status: Order["status"]): Promise<void> {
   const { error } = await supabase.from("orders").update({ status }).eq("id", id)
+  if (error) throw error
+}
+
+export async function markOrderPaid(mpPaymentId: string, externalReference: string, paymentStatus: PaymentStatus): Promise<void> {
+  const updates: Record<string, unknown> = { payment_status: paymentStatus, mp_payment_id: mpPaymentId }
+  if (paymentStatus === "aprobado") updates.status = "confirmado"
+  const { error } = await supabase.from("orders").update(updates).eq("id", externalReference)
   if (error) throw error
 }
 

@@ -56,7 +56,7 @@ export function PaymentMethods() {
         </div>
 
         <p className="text-xs mt-8" style={{ color: "#9E9E9E" }}>
-          Para coordinar el pago escribinos por{" "}
+          Pagá con Mercado Pago directo en el carrito, o coordiná la transferencia por{" "}
           <a
             href="https://wa.me/5493456623935"
             target="_blank"

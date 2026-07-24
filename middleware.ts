@@ -9,6 +9,7 @@ const LIMITS: Record<string, number> = {
   "/admin/login": 20,
   "/admin": 60,
   "/api/instagram": 30,
+  "/api/mercadopago/create-preference": 15,
 }
 
 const hits = new Map<string, { count: number; resetAt: number }>()
@@ -49,5 +50,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/instagram/:path*"],
+  matcher: ["/admin/:path*", "/api/instagram/:path*", "/api/mercadopago/create-preference"],
 }

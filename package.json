@@ -18,6 +18,7 @@
     "clsx": "^2.1.0",
     "heic2any": "^0.0.4",
     "lucide-react": "^0.400.0",
+    "mercadopago": "^3.2.1",
     "next": "latest",
     "react": "latest",
     "react-dom": "^19.0.0",

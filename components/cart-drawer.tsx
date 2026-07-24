@@ -4,7 +4,7 @@ import { useState } from "react"
 import {
   X, Trash2, Plus, Minus, ShoppingBag, MessageCircle,
   ArrowRight, ArrowLeft, User, Package, CheckCircle2,
-  Truck, Store, CreditCard, Banknote, Wallet, Hash
+  Truck, Store, CreditCard, Banknote, Wallet, Hash, Loader2
 } from "lucide-react"
 import { type CartItem } from "@/hooks/use-cart"
 import { formatPrice, finalPrice } from "@/lib/products"
@@ -23,7 +23,7 @@ interface CartDrawerProps {
 
 type Step = "cart" | "form" | "confirm" | "sent"
 type ShippingType = "envio" | "retiro"
-type PaymentType = "transferencia" | "billetera"
+type PaymentType = "transferencia" | "mercadopago"
 
 interface OrderForm {
   nombre: string
@@ -39,13 +39,13 @@ interface OrderForm {
 }
 
 const PAYMENT_LABELS: Record<PaymentType, string> = {
-  transferencia: "Transferencia bancaria",
-  billetera: "Mercado Pago / billetera virtual",
+  transferencia: "Transferencia (coordino por WhatsApp)",
+  mercadopago: "Mercado Pago (pago online)",
 }
 
 const PAYMENT_ICONS: Record<PaymentType, React.ReactNode> = {
   transferencia: <Banknote size={15} />,
-  billetera: <Wallet size={15} />,
+  mercadopago: <Wallet size={15} />,
 }
 
 const defaultForm: OrderForm = {
@@ -77,8 +77,11 @@ export function CartDrawer({
   const [form, setForm] = useState<OrderForm>(defaultForm)
   const [orderId, setOrderId] = useState(generateOrderId)
   const [errors, setErrors] = useState<Partial<Record<keyof OrderForm, string>>>({})
+  const [mpLoading, setMpLoading] = useState(false)
+  const [mpError, setMpError] = useState<string | null>(null)
 
   const totalItems = items.reduce((s, i) => s + i.quantity, 0)
+  const hasBackorder = items.some((i) => i.isBackorder)
 
   function handleClose() {
     onClose()
@@ -86,6 +89,7 @@ export function CartDrawer({
       setStep("cart")
       setForm(defaultForm)
       setErrors({})
+      setMpError(null)
       setOrderId(generateOrderId())
     }, 300)
   }
@@ -105,6 +109,9 @@ export function CartDrawer({
       if (!form.provincia.trim()) e.provincia = "Ingresa tu provincia"
     }
     setErrors(e)
+    if (hasBackorder && form.paymentType === "mercadopago") {
+      setField("paymentType", "transferencia")
+    }
     return Object.keys(e).length === 0
   }
 
@@ -122,8 +129,6 @@ export function CartDrawer({
       form.shippingType === "envio"
         ? `Envio a domicilio\n  ${form.direccion}, ${form.localidad}, ${form.provincia}${form.codigoPostal ? ` CP ${form.codigoPostal}` : ""}`
         : "Retiro coordinado por WhatsApp"
-
-    const hasBackorder = items.some((i) => i.isBackorder)
 
     const lines = [
       `Nuevo pedido #${orderId}`,
@@ -185,6 +190,43 @@ export function CartDrawer({
     }
     onClear()
     setStep("sent")
+  }
+
+  async function handleMercadoPagoPay() {
+    setMpLoading(true)
+    setMpError(null)
+    try {
+      const res = await fetch("/api/mercadopago/create-preference", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId,
+          items: items.map((i) => ({
+            productId: i.product.id,
+            quantity: i.quantity,
+            selectedSize: i.selectedSize,
+            selectedColor: i.selectedColor,
+            isBackorder: i.isBackorder || false,
+          })),
+          nombre: form.nombre,
+          telefono: form.telefono,
+          email: form.email || undefined,
+          shippingType: form.shippingType,
+          direccion: form.direccion,
+          localidad: form.localidad,
+          provincia: form.provincia,
+          nota: form.nota || undefined,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.initPoint) {
+        throw new Error(data.error || "No se pudo iniciar el pago")
+      }
+      window.location.href = data.initPoint
+    } catch (e) {
+      setMpError(e instanceof Error ? e.message : "No se pudo iniciar el pago con Mercado Pago")
+      setMpLoading(false)
+    }
   }
 
   const whatsappUrl = `https://wa.me/5493456623935?text=${encodeURIComponent(buildWhatsAppMessage())}`
@@ -461,23 +503,32 @@ export function CartDrawer({
                   </p>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  {(Object.keys(PAYMENT_LABELS) as PaymentType[]).map((type) => (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => setField("paymentType", type)}
-                      className="flex items-center gap-2 px-3 py-2.5 border-2 text-xs font-semibold text-left transition-all"
-                      style={{
-                        borderColor: form.paymentType === type ? "#000" : "#E0E0E0",
-                        backgroundColor: form.paymentType === type ? "#000" : "#fff",
-                        color: form.paymentType === type ? "#fff" : "#5C5C5C",
-                      }}
-                    >
-                      {PAYMENT_ICONS[type]}
-                      {PAYMENT_LABELS[type]}
-                    </button>
-                  ))}
+                  {(Object.keys(PAYMENT_LABELS) as PaymentType[]).map((type) => {
+                    const disabled = type === "mercadopago" && hasBackorder
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => setField("paymentType", type)}
+                        className="flex items-center gap-2 px-3 py-2.5 border-2 text-xs font-semibold text-left transition-all disabled:opacity-40"
+                        style={{
+                          borderColor: form.paymentType === type ? "#000" : "#E0E0E0",
+                          backgroundColor: form.paymentType === type ? "#000" : "#fff",
+                          color: form.paymentType === type ? "#fff" : "#5C5C5C",
+                        }}
+                      >
+                        {PAYMENT_ICONS[type]}
+                        {PAYMENT_LABELS[type]}
+                      </button>
+                    )
+                  })}
                 </div>
+                {hasBackorder && (
+                  <p className="text-xs" style={{ color: textMuted }}>
+                    Mercado Pago no esta disponible con productos por encargo en el carrito (no llevan pago por adelantado).
+                  </p>
+                )}
               </section>
 
               <section className="flex flex-col gap-2">
@@ -558,8 +609,14 @@ export function CartDrawer({
                 </SummaryBlock>
               )}
 
+              {mpError && (
+                <p className="text-xs text-center font-semibold" style={{ color: "#E63946" }}>{mpError}</p>
+              )}
+
               <p className="text-xs text-center leading-relaxed px-2" style={{ color: textMuted }}>
-                Al tocar Enviar pedido se abre WhatsApp con todos los datos listos. Confirmaremos disponibilidad y coordinaremos el pago y envio.
+                {form.paymentType === "mercadopago"
+                  ? "Al tocar Pagar te llevamos a Mercado Pago para completar el pago de forma segura."
+                  : "Al tocar Enviar pedido se abre WhatsApp con todos los datos listos. Confirmaremos disponibilidad y coordinaremos el pago y envio."}
               </p>
             </div>
           )}
@@ -651,22 +708,35 @@ export function CartDrawer({
               <div className="flex gap-2">
                 <button
                   onClick={() => setStep("form")}
-                  className="flex items-center justify-center gap-1 py-3 px-4 text-xs font-bold border transition-opacity hover:opacity-60"
+                  disabled={mpLoading}
+                  className="flex items-center justify-center gap-1 py-3 px-4 text-xs font-bold border transition-opacity hover:opacity-60 disabled:opacity-40"
                   style={{ borderColor: "#E0E0E0", color: textSecondary }}
                 >
                   <ArrowLeft size={14} />
                 </button>
-                <a
-                  href={whatsappUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={handleSendOrder}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-widest transition-opacity hover:opacity-80"
-                  style={{ backgroundColor: "#25D366", color: "#fff", letterSpacing: "0.08em" }}
-                >
-                  <MessageCircle size={16} />
-                  Enviar pedido
-                </a>
+                {form.paymentType === "mercadopago" ? (
+                  <button
+                    onClick={handleMercadoPagoPay}
+                    disabled={mpLoading}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-widest transition-opacity hover:opacity-80 disabled:opacity-60"
+                    style={{ backgroundColor: "#009EE3", color: "#fff", letterSpacing: "0.08em" }}
+                  >
+                    {mpLoading ? <Loader2 size={16} className="animate-spin" /> : <Wallet size={16} />}
+                    {mpLoading ? "Redirigiendo..." : "Pagar con Mercado Pago"}
+                  </button>
+                ) : (
+                  <a
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={handleSendOrder}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-widest transition-opacity hover:opacity-80"
+                    style={{ backgroundColor: "#25D366", color: "#fff", letterSpacing: "0.08em" }}
+                  >
+                    <MessageCircle size={16} />
+                    Enviar pedido
+                  </a>
+                )}
               </div>
             )}
           </div>
