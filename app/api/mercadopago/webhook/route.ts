@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getPaymentClient } from "@/lib/mercadopago"
-import { markOrderPaid, type PaymentStatus } from "@/lib/orders-store"
+import { getSupabaseAdmin } from "@/lib/supabase-admin"
+import type { PaymentStatus } from "@/lib/orders-store"
 
 function mapStatus(mpStatus: string | undefined): PaymentStatus {
   switch (mpStatus) {
@@ -17,7 +18,13 @@ async function handleNotification(paymentId: string | null) {
   const payment = await getPaymentClient().get({ id: paymentId })
   const externalReference = payment.external_reference
   if (!externalReference) return
-  await markOrderPaid(String(payment.id), externalReference, mapStatus(payment.status))
+
+  const paymentStatus = mapStatus(payment.status)
+  const updates: Record<string, unknown> = { payment_status: paymentStatus, mp_payment_id: String(payment.id) }
+  if (paymentStatus === "aprobado") updates.status = "confirmado"
+
+  const { error } = await getSupabaseAdmin().from("orders").update(updates).eq("id", externalReference)
+  if (error) console.error("Error actualizando pedido tras webhook de Mercado Pago:", error)
 }
 
 // Mercado Pago manda la notificacion por query params (IPN clasico) o en el body (webhooks v2).

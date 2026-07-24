@@ -103,13 +103,6 @@ export async function updateOrderStatus(id: string, status: Order["status"]): Pr
   if (error) throw error
 }
 
-export async function markOrderPaid(mpPaymentId: string, externalReference: string, paymentStatus: PaymentStatus): Promise<void> {
-  const updates: Record<string, unknown> = { payment_status: paymentStatus, mp_payment_id: mpPaymentId }
-  if (paymentStatus === "aprobado") updates.status = "confirmado"
-  const { error } = await supabase.from("orders").update(updates).eq("id", externalReference)
-  if (error) throw error
-}
-
 export async function deleteOrder(id: string): Promise<void> {
   const { error } = await supabase.from("orders").delete().eq("id", id)
   if (error) throw error
