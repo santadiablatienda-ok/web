@@ -109,6 +109,11 @@ export async function POST(req: Request) {
   }
 
   const siteUrl = getSiteUrl()
+  // En previews de Vercel el sitio esta protegido por Vercel Authentication; sin este
+  // bypass el webhook de Mercado Pago (llamada server-to-server, sin sesion) recibiria
+  // un 401/redirect en vez de llegar a nuestra API route.
+  const bypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET
+  const notificationUrl = `${siteUrl}/api/mercadopago/webhook${bypassSecret ? `?x-vercel-protection-bypass=${bypassSecret}` : ""}`
 
   try {
     const preference = await getPreferenceClient().create({
@@ -126,7 +131,7 @@ export async function POST(req: Request) {
           pending: `${siteUrl}/checkout/pending?order=${encodeURIComponent(orderId)}`,
         },
         auto_return: "approved",
-        notification_url: `${siteUrl}/api/mercadopago/webhook`,
+        notification_url: notificationUrl,
         statement_descriptor: "SANTA DIABLA",
       },
     })
