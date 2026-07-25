@@ -4,37 +4,37 @@ const banners = [
   {
     id: "botas",
     label: "Botas.",
-    image: "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1783568281440-47yriz.jpg",
+    image: "https://lzvhgukdjuyitxuclmzw.supabase.co/storage/v1/object/public/product-images/1783568281440-47yriz.jpg",
   },
   {
     id: "borcegos",
     label: "Borcegos.",
-    image: "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784743464526-zc91xw.jpg",
+    image: "https://lzvhgukdjuyitxuclmzw.supabase.co/storage/v1/object/public/product-images/1784743464526-zc91xw.jpg",
   },
   {
     id: "importados",
     label: "Importados.",
-    image: "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1783736398590-r1vyjz.jpg",
+    image: "https://lzvhgukdjuyitxuclmzw.supabase.co/storage/v1/object/public/product-images/1783736398590-r1vyjz.jpg",
   },
   {
     id: "ojotas",
     label: "Ojotas.",
-    image: "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784683497127-kutx0r.jpg",
+    image: "https://lzvhgukdjuyitxuclmzw.supabase.co/storage/v1/object/public/product-images/1784683497127-kutx0r.jpg",
   },
   {
     id: "chicos",
     label: "Chicos.",
-    image: "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784684495624-varvsd.jpg",
+    image: "https://lzvhgukdjuyitxuclmzw.supabase.co/storage/v1/object/public/product-images/1784684495624-varvsd.jpg",
   },
   {
     id: "sandalias",
     label: "Sandalias.",
-    image: "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784766148502-y9lwna.jpg",
+    image: "https://lzvhgukdjuyitxuclmzw.supabase.co/storage/v1/object/public/product-images/1784766148502-y9lwna.jpg",
   },
   {
     id: "suecos",
     label: "Suecos.",
-    image: "https://zwkkhtnklqmdhbwlcimg.supabase.co/storage/v1/object/public/product-images/1784766149255-swont7.jpg",
+    image: "https://lzvhgukdjuyitxuclmzw.supabase.co/storage/v1/object/public/product-images/1784766149255-swont7.jpg",
   },
 ]
 

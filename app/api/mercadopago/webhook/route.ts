@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { getPaymentClient } from "@/lib/mercadopago"
-import { getSupabaseAdmin } from "@/lib/supabase-admin"
+import { supabase } from "@/lib/supabase"
 import type { PaymentStatus } from "@/lib/orders-store"
 
 function mapStatus(mpStatus: string | undefined): PaymentStatus {
@@ -20,10 +20,14 @@ async function handleNotification(paymentId: string | null) {
   if (!externalReference) return
 
   const paymentStatus = mapStatus(payment.status)
-  const updates: Record<string, unknown> = { payment_status: paymentStatus, mp_payment_id: String(payment.id) }
-  if (paymentStatus === "aprobado") updates.status = "confirmado"
 
-  const { error } = await getSupabaseAdmin().from("orders").update(updates).eq("id", externalReference)
+  const { error } = await supabase.rpc("confirm_order_payment", {
+    p_order_id: externalReference,
+    p_payment_status: paymentStatus,
+    p_mp_payment_id: String(payment.id),
+    p_status: paymentStatus === "aprobado" ? "confirmado" : null,
+    p_secret: process.env.MP_DB_SECRET,
+  })
   if (error) console.error("Error actualizando pedido tras webhook de Mercado Pago:", error)
 }
 

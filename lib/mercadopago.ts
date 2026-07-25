@@ -18,5 +18,9 @@ export function getPaymentClient(): Payment {
 }
 
 export function getSiteUrl(): string {
-  return process.env.NEXT_PUBLIC_SITE_URL || "https://www.santadiablatienda.com"
+  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL
+  // En preview deployments de Vercel no hay un dominio fijo conocido de antemano;
+  // Vercel expone la URL real del deploy en esta variable automaticamente.
+  if (process.env.NEXT_PUBLIC_VERCEL_URL) return `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+  return "https://www.santadiablatienda.com"
 }

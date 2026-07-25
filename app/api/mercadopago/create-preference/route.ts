@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
-import { getSupabaseAdmin } from "@/lib/supabase-admin"
 import { finalPrice, type Product } from "@/lib/products"
 import { getPreferenceClient, getSiteUrl } from "@/lib/mercadopago"
 
@@ -133,7 +132,11 @@ export async function POST(req: Request) {
     })
 
     if (preference.id) {
-      const { error: updateError } = await getSupabaseAdmin().from("orders").update({ mp_preference_id: preference.id }).eq("id", orderId)
+      const { error: updateError } = await supabase.rpc("set_order_mp_preference", {
+        p_order_id: orderId,
+        p_preference_id: preference.id,
+        p_secret: process.env.MP_DB_SECRET,
+      })
       if (updateError) console.error("No se pudo guardar mp_preference_id en el pedido:", updateError)
     }
 
