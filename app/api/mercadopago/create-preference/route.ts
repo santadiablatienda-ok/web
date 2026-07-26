@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
-import { getSupabaseAdmin } from "@/lib/supabase-admin"
 import { finalPrice, type Product } from "@/lib/products"
 import { getPreferenceClient, getSiteUrl } from "@/lib/mercadopago"
 
@@ -110,6 +109,11 @@ export async function POST(req: Request) {
   }
 
   const siteUrl = getSiteUrl()
+  // En previews de Vercel el sitio esta protegido por Vercel Authentication; sin este
+  // bypass el webhook de Mercado Pago (llamada server-to-server, sin sesion) recibiria
+  // un 401/redirect en vez de llegar a nuestra API route.
+  const bypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET
+  const notificationUrl = `${siteUrl}/api/mercadopago/webhook${bypassSecret ? `?x-vercel-protection-bypass=${bypassSecret}` : ""}`
 
   try {
     const preference = await getPreferenceClient().create({
@@ -127,13 +131,17 @@ export async function POST(req: Request) {
           pending: `${siteUrl}/checkout/pending?order=${encodeURIComponent(orderId)}`,
         },
         auto_return: "approved",
-        notification_url: `${siteUrl}/api/mercadopago/webhook`,
+        notification_url: notificationUrl,
         statement_descriptor: "SANTA DIABLA",
       },
     })
 
     if (preference.id) {
-      const { error: updateError } = await getSupabaseAdmin().from("orders").update({ mp_preference_id: preference.id }).eq("id", orderId)
+      const { error: updateError } = await supabase.rpc("set_order_mp_preference", {
+        p_order_id: orderId,
+        p_preference_id: preference.id,
+        p_secret: process.env.MP_DB_SECRET,
+      })
       if (updateError) console.error("No se pudo guardar mp_preference_id en el pedido:", updateError)
     }
 
