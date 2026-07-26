@@ -189,7 +189,7 @@ export default function AdminPage() {
   }
 
   async function handleSaveProduct() {
-    if (!editForm.name.trim() || editForm.price <= 0) return
+    if (!editForm.name.trim()) return
     const product: Product = { id: editingId!, ...editForm }
     try {
       await saveProducts([product])
@@ -997,7 +997,7 @@ function ProductForm({ form, setForm, categories, isNew, onSave, onCancel }: Pro
 
   const removeColor = (col: string) => f("colors", (form.colors ?? []).filter((x) => x !== col))
 
-  const isValid = form.name.trim() !== "" && form.price > 0
+  const isValid = form.name.trim() !== ""
 
   return (
     <div className="border mt-4 mb-2" style={{ backgroundColor: c.white, borderColor: c.black }}>
