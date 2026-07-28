@@ -8,6 +8,7 @@ import {
   Palette, FolderPlus,
 } from "lucide-react"
 import { ImageUploader } from "@/components/image-uploader"
+import { GalleryManager } from "@/components/gallery-manager"
 import { FolderImporter } from "@/components/folder-importer"
 import { isAuthenticated, logout } from "@/lib/auth"
 import { getProducts, saveProducts, deleteProduct, resetProducts, getCategories, saveCategories, deleteCategory, resetCategories } from "@/lib/products-store"
@@ -38,7 +39,7 @@ const c = {
 function emptyProduct(): Omit<Product, "id"> {
   return {
     name: "", description: "", specs: [], price: 0, cost: 0, category: "botas", brand: "",
-    image: "", imageAlt: "", badge: "",
+    image: "", imageAlt: "", gallery: [], badge: "",
     featured: false, colors: [], sizes: [], sizeStock: {}, stock: 10, isEncargo: false, active: true,
     discountPercent: 0, season: "",
   }
@@ -1089,13 +1090,11 @@ function ProductForm({ form, setForm, categories, isNew, onSave, onCancel }: Pro
             placeholder="Ej: Adidas, Nike, Jordan..." className={inputClass} style={inputStyle} />
         </div>
 
-        {/* Imagen */}
+        {/* Fotos */}
         <div className="md:col-span-2">
-          <ImageUploader
-            value={form.image}
-            onChange={(url) => f("image", url)}
-            label="Imagen del producto"
-            previewSize="md"
+          <GalleryManager
+            images={[form.image, ...(form.gallery ?? [])].filter((v, i, arr) => !!v && arr.indexOf(v) === i)}
+            onChange={(imgs) => setForm({ ...form, image: imgs[0] ?? "", gallery: imgs.slice(1) })}
           />
         </div>
 
