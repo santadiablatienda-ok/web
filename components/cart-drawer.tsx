@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import {
   X, Trash2, Plus, Minus, ShoppingBag, MessageCircle,
   ArrowRight, ArrowLeft, User, Package, CheckCircle2,
@@ -79,37 +79,9 @@ export function CartDrawer({
   const [errors, setErrors] = useState<Partial<Record<keyof OrderForm, string>>>({})
   const [mpLoading, setMpLoading] = useState(false)
   const [mpError, setMpError] = useState<string | null>(null)
-  const [shippingQuote, setShippingQuote] = useState<{ costo: number; estimado: boolean } | null>(null)
-  const [shippingQuoteLoading, setShippingQuoteLoading] = useState(false)
 
   const totalItems = items.reduce((s, i) => s + i.quantity, 0)
   const hasBackorder = items.some((i) => i.isBackorder)
-  const shippingCost = form.shippingType === "envio" ? (shippingQuote?.costo ?? 0) : 0
-  const grandTotal = totalPrice + shippingCost
-  const grandDepositTotal = depositTotal + shippingCost
-
-  useEffect(() => {
-    if (form.shippingType !== "envio" || form.codigoPostal.trim().length < 4) {
-      setShippingQuote(null)
-      return
-    }
-    const cp = form.codigoPostal.trim()
-    setShippingQuoteLoading(true)
-    const timeout = setTimeout(() => {
-      fetch("/api/andreani/quote", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ codigoPostal: cp }),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (typeof data.costo === "number") setShippingQuote({ costo: data.costo, estimado: !!data.estimado })
-        })
-        .catch(() => { /* si falla la cotizacion, no sumamos costo de envio */ })
-        .finally(() => setShippingQuoteLoading(false))
-    }, 500)
-    return () => clearTimeout(timeout)
-  }, [form.shippingType, form.codigoPostal])
 
   function handleClose() {
     onClose()
@@ -135,7 +107,6 @@ export function CartDrawer({
       if (!form.direccion.trim()) e.direccion = "Ingresa tu direccion"
       if (!form.localidad.trim()) e.localidad = "Ingresa tu localidad"
       if (!form.provincia.trim()) e.provincia = "Ingresa tu provincia"
-      if (!form.codigoPostal.trim()) e.codigoPostal = "Ingresa tu codigo postal"
     }
     setErrors(e)
     if (hasBackorder && form.paymentType === "mercadopago") {
@@ -170,10 +141,8 @@ export function CartDrawer({
       `Productos`,
       productLines,
       ``,
-      `Subtotal productos: ${formatPrice(totalPrice)}`,
-      shippingCost > 0 ? `Envio${shippingQuote?.estimado ? " (estimado)" : ""}: ${formatPrice(shippingCost)}` : null,
-      `Total del pedido: ${formatPrice(grandTotal)}`,
-      hasBackorder ? `A abonar ahora: ${formatPrice(grandDepositTotal)} (los items por encargo no llevan pago por adelantado, se coordina cuando se confirme stock en fabrica)` : null,
+      `Total del pedido: ${formatPrice(totalPrice)}`,
+      hasBackorder ? `A abonar ahora: ${formatPrice(depositTotal)} (los items por encargo no llevan pago por adelantado, se coordina cuando se confirme stock en fabrica)` : null,
       ``,
       `Entrega`,
       `  ${shipping}`,
@@ -204,14 +173,12 @@ export function CartDrawer({
         category: i.product.category,
         isBackorder: i.isBackorder || undefined,
       })),
-      total: grandTotal,
-      depositDue: grandDepositTotal,
+      total: totalPrice,
+      depositDue: depositTotal,
       shippingType: form.shippingType,
       direccion: form.shippingType === "envio" ? form.direccion : undefined,
       localidad: form.shippingType === "envio" ? form.localidad : undefined,
       provincia: form.shippingType === "envio" ? form.provincia : undefined,
-      codigoPostal: form.shippingType === "envio" ? form.codigoPostal : undefined,
-      shippingCost: shippingCost || undefined,
       paymentType: PAYMENT_LABELS[form.paymentType],
       nota: form.nota || undefined,
       status: "pendiente",
@@ -248,8 +215,6 @@ export function CartDrawer({
           direccion: form.direccion,
           localidad: form.localidad,
           provincia: form.provincia,
-          codigoPostal: form.codigoPostal,
-          shippingCost: shippingCost || undefined,
           nota: form.nota || undefined,
         }),
       })
@@ -516,19 +481,9 @@ export function CartDrawer({
                     <FormField label="Direccion *" value={form.direccion} onChange={(v) => setField("direccion", v)} placeholder="Calle y numero" error={errors.direccion} />
                     <div className="grid grid-cols-2 gap-2">
                       <FormField label="Localidad *" value={form.localidad} onChange={(v) => setField("localidad", v)} placeholder="Ciudad" error={errors.localidad} />
-                      <FormField label="CP *" value={form.codigoPostal} onChange={(v) => setField("codigoPostal", v)} placeholder="3200" error={errors.codigoPostal} />
+                      <FormField label="CP" value={form.codigoPostal} onChange={(v) => setField("codigoPostal", v)} placeholder="3200" />
                     </div>
                     <FormField label="Provincia *" value={form.provincia} onChange={(v) => setField("provincia", v)} placeholder="Entre Rios" error={errors.provincia} />
-                    {shippingQuoteLoading && (
-                      <p className="text-xs flex items-center gap-1.5" style={{ color: textMuted }}>
-                        <Loader2 size={11} className="animate-spin" /> Calculando costo de envio...
-                      </p>
-                    )}
-                    {!shippingQuoteLoading && shippingQuote && (
-                      <p className="text-xs font-semibold" style={{ color: textSecondary }}>
-                        Costo de envio{shippingQuote.estimado ? " (estimado)" : ""}: {formatPrice(shippingQuote.costo)}
-                      </p>
-                    )}
                   </div>
                 )}
 
@@ -615,20 +570,14 @@ export function CartDrawer({
                     </span>
                   </div>
                 ))}
-                {shippingCost > 0 && (
-                  <div className="flex justify-between text-xs pt-2 border-t mt-1" style={{ borderColor: "#E0E0E0", color: textSecondary }}>
-                    <span>Envio{shippingQuote?.estimado ? " (estimado)" : ""}</span>
-                    <span className="font-semibold">{formatPrice(shippingCost)}</span>
-                  </div>
-                )}
-                <div className={`flex justify-between text-sm font-black ${shippingCost > 0 ? "" : "pt-2 border-t mt-1"}`} style={{ borderColor: "#E0E0E0" }}>
+                <div className="flex justify-between text-sm font-black pt-2 border-t mt-1" style={{ borderColor: "#E0E0E0" }}>
                   <span style={{ color: textPrimary }}>Total del pedido</span>
-                  <span style={{ color: textPrimary }}>{formatPrice(grandTotal)}</span>
+                  <span style={{ color: textPrimary }}>{formatPrice(totalPrice)}</span>
                 </div>
-                {grandDepositTotal !== grandTotal && (
+                {depositTotal !== totalPrice && (
                   <div className="flex justify-between text-sm font-black" style={{ color: "#E63946" }}>
                     <span>A abonar ahora</span>
-                    <span>{formatPrice(grandDepositTotal)}</span>
+                    <span>{formatPrice(depositTotal)}</span>
                   </div>
                 )}
               </SummaryBlock>
@@ -714,13 +663,13 @@ export function CartDrawer({
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: textMuted, letterSpacing: "0.1em" }}>
-                {grandDepositTotal !== grandTotal ? "A abonar ahora" : "Total"}
+                {depositTotal !== totalPrice ? "A abonar ahora" : "Total"}
               </span>
-              <span className="text-xl font-black" style={{ color: textPrimary }}>{formatPrice(grandDepositTotal)}</span>
+              <span className="text-xl font-black" style={{ color: textPrimary }}>{formatPrice(depositTotal)}</span>
             </div>
-            {grandDepositTotal !== grandTotal && (
+            {depositTotal !== totalPrice && (
               <p className="text-xs -mt-2" style={{ color: textMuted }}>
-                Los items por encargo no llevan pago por adelantado, se coordina cuando confirmemos stock en fabrica. Total del pedido: {formatPrice(grandTotal)}
+                Los items por encargo no llevan pago por adelantado, se coordina cuando confirmemos stock en fabrica. Total del pedido: {formatPrice(totalPrice)}
               </p>
             )}
 

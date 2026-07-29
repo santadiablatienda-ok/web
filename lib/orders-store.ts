@@ -15,17 +15,12 @@ export interface Order {
   direccion?: string
   localidad?: string
   provincia?: string
-  codigoPostal?: string
-  shippingCost?: number
   paymentType: string
   nota?: string
   status: "pendiente" | "confirmado" | "enviado" | "entregado" | "cancelado"
   paymentStatus?: PaymentStatus
   mpPreferenceId?: string
   mpPaymentId?: string
-  andreaniNumeroEnvio?: string
-  andreaniEstado?: string
-  andreaniEstadoFecha?: string
 }
 
 interface OrderRow {
@@ -41,17 +36,12 @@ interface OrderRow {
   direccion: string | null
   localidad: string | null
   provincia: string | null
-  codigo_postal: string | null
-  shipping_cost: number | null
   payment_type: string | null
   nota: string | null
   status: Order["status"]
   payment_status: PaymentStatus | null
   mp_preference_id: string | null
   mp_payment_id: string | null
-  andreani_numero_envio: string | null
-  andreani_estado: string | null
-  andreani_estado_fecha: string | null
 }
 
 function rowToOrder(r: OrderRow): Order {
@@ -68,17 +58,12 @@ function rowToOrder(r: OrderRow): Order {
     direccion: r.direccion ?? undefined,
     localidad: r.localidad ?? undefined,
     provincia: r.provincia ?? undefined,
-    codigoPostal: r.codigo_postal ?? undefined,
-    shippingCost: r.shipping_cost ?? undefined,
     paymentType: r.payment_type ?? "",
     nota: r.nota ?? undefined,
     status: r.status,
     paymentStatus: r.payment_status ?? undefined,
     mpPreferenceId: r.mp_preference_id ?? undefined,
     mpPaymentId: r.mp_payment_id ?? undefined,
-    andreaniNumeroEnvio: r.andreani_numero_envio ?? undefined,
-    andreaniEstado: r.andreani_estado ?? undefined,
-    andreaniEstadoFecha: r.andreani_estado_fecha ?? undefined,
   }
 }
 
@@ -102,8 +87,6 @@ export async function saveOrder(order: Order): Promise<void> {
     direccion: order.direccion ?? null,
     localidad: order.localidad ?? null,
     provincia: order.provincia ?? null,
-    codigo_postal: order.codigoPostal ?? null,
-    shipping_cost: order.shippingCost ?? 0,
     payment_type: order.paymentType,
     nota: order.nota ?? null,
     status: order.status,
@@ -117,15 +100,6 @@ export async function saveOrder(order: Order): Promise<void> {
 
 export async function updateOrderStatus(id: string, status: Order["status"]): Promise<void> {
   const { error } = await supabase.from("orders").update({ status }).eq("id", id)
-  if (error) throw error
-}
-
-export async function updateOrderAndreani(id: string, numeroEnvio: string): Promise<void> {
-  const { error } = await supabase.from("orders").update({
-    andreani_numero_envio: numeroEnvio || null,
-    andreani_estado: numeroEnvio ? "generado" : null,
-    andreani_estado_fecha: numeroEnvio ? new Date().toISOString() : null,
-  }).eq("id", id)
   if (error) throw error
 }
 
