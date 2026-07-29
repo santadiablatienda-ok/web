@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import {
   LogOut, Search, Plus, Pencil, Trash2, Save, X,
   ShoppingBag, Package, Tag, RotateCcw, CheckCircle2, ExternalLink,
-  Palette, FolderPlus,
+  Palette, FolderPlus, Truck,
 } from "lucide-react"
 import { ImageUploader } from "@/components/image-uploader"
 import { GalleryManager } from "@/components/gallery-manager"
@@ -13,7 +13,8 @@ import { FolderImporter } from "@/components/folder-importer"
 import { isAuthenticated, logout } from "@/lib/auth"
 import { getProducts, saveProducts, deleteProduct, resetProducts, getCategories, saveCategories, deleteCategory, resetCategories } from "@/lib/products-store"
 import { categories as defaultCategories, formatPrice, type Product, type Category } from "@/lib/products"
-import { getOrders, updateOrderStatus, deleteOrder, type Order } from "@/lib/orders-store"
+import { getOrders, updateOrderStatus, updateOrderAndreani, deleteOrder, type Order } from "@/lib/orders-store"
+import { ANDREANI_CP_ORIGEN, ANDREANI_SUCURSAL_ORIGEN, ANDREANI_REMITENTE_NOMBRE } from "@/lib/andreani"
 import { DEPOSIT_PERCENT } from "@/hooks/use-cart"
 
 // ─── Paleta ──────────────────────────────────────────────────────────────────
@@ -117,6 +118,9 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<"products" | "categories" | "orders" | "metrics">("products")
   const [orders, setOrders] = useState<Order[]>([])
   const [saved, setSaved] = useState(false)
+  const [andreaniPanelOrder, setAndreaniPanelOrder] = useState<string | null>(null)
+  const [andreaniNumeroInput, setAndreaniNumeroInput] = useState("")
+  const [copiedField, setCopiedField] = useState<string | null>(null)
 
   // Products
   const [products, setProducts] = useState<Product[]>([])
@@ -211,6 +215,29 @@ export default function AdminPage() {
       triggerSaved()
     } catch (e) {
       reportError("borrar el producto", e)
+    }
+  }
+
+  function openAndreaniPanel(order: Order) {
+    setAndreaniPanelOrder(order.id)
+    setAndreaniNumeroInput(order.andreaniNumeroEnvio ?? "")
+  }
+
+  function copyToClipboard(text: string, field: string) {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedField(field)
+      setTimeout(() => setCopiedField((f) => f === field ? null : f), 1500)
+    })
+  }
+
+  async function handleSaveAndreaniNumero(orderId: string) {
+    try {
+      await updateOrderAndreani(orderId, andreaniNumeroInput.trim())
+      setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, andreaniNumeroEnvio: andreaniNumeroInput.trim() || undefined } : o))
+      setAndreaniPanelOrder(null)
+      triggerSaved()
+    } catch (e) {
+      reportError("guardar el numero de envio", e)
     }
   }
 
@@ -722,12 +749,81 @@ export default function AdminPage() {
                       </div>
                       <div>
                         <p className="font-bold uppercase tracking-wide mb-1" style={{ color: c.gray600 }}>Entrega</p>
-                        <p style={{ color: c.gray600 }}>{order.shippingType === "envio" ? `Envio: ${order.localidad ?? ""}, ${order.provincia ?? ""}` : "Retiro coordinado"}</p>
+                        <p style={{ color: c.gray600 }}>
+                          {order.shippingType === "envio" ? `Envio: ${order.localidad ?? ""}, ${order.provincia ?? ""}${order.codigoPostal ? ` (CP ${order.codigoPostal})` : ""}` : "Retiro coordinado"}
+                        </p>
+                        {!!order.shippingCost && (
+                          <p style={{ color: c.gray400 }}>Costo de envio: {formatPrice(order.shippingCost)}</p>
+                        )}
                         <p className="mt-1 font-bold" style={{ color: c.black }}>{formatPrice(order.total)}</p>
                         {order.depositDue !== undefined && order.depositDue < order.total && (
                           <p className="text-xs font-semibold" style={{ color: c.accent }}>
                             Seña abonada: {formatPrice(order.depositDue)} · Saldo: {formatPrice(order.total - order.depositDue)}
                           </p>
+                        )}
+                        {order.shippingType === "envio" && (
+                          <>
+                            {order.andreaniNumeroEnvio ? (
+                              <button
+                                type="button"
+                                onClick={() => openAndreaniPanel(order)}
+                                className="mt-2 font-bold flex items-center gap-1 hover:opacity-70"
+                                style={{ color: c.success }}
+                              >
+                                <Truck size={12} /> Andreani #{order.andreaniNumeroEnvio} (editar)
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => openAndreaniPanel(order)}
+                                className="mt-2 flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold uppercase tracking-wide border transition-all hover:bg-black hover:text-white"
+                                style={{ borderColor: c.gray200, color: c.gray600, letterSpacing: "0.04em" }}
+                              >
+                                <Truck size={12} />
+                                Preparar envio Andreani
+                              </button>
+                            )}
+
+                            {andreaniPanelOrder === order.id && (
+                              <div className="mt-2 p-3 border flex flex-col gap-2" style={{ borderColor: c.gray200, backgroundColor: c.gray50 }}>
+                                <p className="font-bold uppercase tracking-wide" style={{ color: c.gray600 }}>Datos para cargar en Andreani</p>
+                                {[
+                                  { label: "Remitente", value: `${ANDREANI_REMITENTE_NOMBRE} — CP ${ANDREANI_CP_ORIGEN}, Sucursal ${ANDREANI_SUCURSAL_ORIGEN}` },
+                                  { label: "Destinatario", value: order.nombre },
+                                  { label: "Telefono", value: order.telefono },
+                                  { label: "Direccion", value: `${order.direccion ?? ""}, ${order.localidad ?? ""}, ${order.provincia ?? ""}${order.codigoPostal ? ` (CP ${order.codigoPostal})` : ""}` },
+                                ].map(({ label, value }) => (
+                                  <div key={label} className="flex items-center justify-between gap-2">
+                                    <span style={{ color: c.gray600 }}>{label}: <strong style={{ color: c.black }}>{value}</strong></span>
+                                    <button type="button" onClick={() => copyToClipboard(value, `${order.id}-${label}`)}
+                                      className="px-2 py-1 text-xs font-bold uppercase border shrink-0 hover:bg-black hover:text-white transition-all"
+                                      style={{ borderColor: c.gray200, color: c.gray600 }}>
+                                      {copiedField === `${order.id}-${label}` ? "Copiado" : "Copiar"}
+                                    </button>
+                                  </div>
+                                ))}
+                                <a href="https://www.andreani.com/" target="_blank" rel="noopener noreferrer"
+                                  className="mt-1 flex items-center justify-center gap-1.5 py-2 text-xs font-bold uppercase tracking-wide transition-opacity hover:opacity-80"
+                                  style={{ backgroundColor: c.black, color: c.white }}>
+                                  <ExternalLink size={12} /> Abrir Andreani
+                                </a>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <input
+                                    value={andreaniNumeroInput}
+                                    onChange={(e) => setAndreaniNumeroInput(e.target.value)}
+                                    placeholder="Numero de envio Andreani"
+                                    className="flex-1 px-2.5 py-1.5 text-xs border outline-none"
+                                    style={inputStyle}
+                                  />
+                                  <PrimaryButton onClick={() => handleSaveAndreaniNumero(order.id)}>Guardar</PrimaryButton>
+                                </div>
+                                <button type="button" onClick={() => setAndreaniPanelOrder(null)}
+                                  className="text-xs font-semibold self-start hover:opacity-60" style={{ color: c.gray400 }}>
+                                  Cerrar
+                                </button>
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>

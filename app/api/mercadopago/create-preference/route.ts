@@ -21,6 +21,8 @@ interface RequestBody {
   direccion?: string
   localidad?: string
   provincia?: string
+  codigoPostal?: string
+  shippingCost?: number
   nota?: string
 }
 
@@ -32,7 +34,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Body invalido" }, { status: 400 })
   }
 
-  const { orderId, items, nombre, telefono, email, shippingType, direccion, localidad, provincia, nota } = body
+  const { orderId, items, nombre, telefono, email, shippingType, direccion, localidad, provincia, codigoPostal, shippingCost, nota } = body
 
   if (!orderId || !Array.isArray(items) || items.length === 0 || !nombre?.trim() || !telefono?.trim()) {
     return NextResponse.json({ error: "Faltan datos del pedido" }, { status: 400 })
@@ -84,6 +86,18 @@ export async function POST(req: Request) {
     })
   }
 
+  const validShippingCost = shippingType === "envio" && typeof shippingCost === "number" && shippingCost > 0 ? shippingCost : 0
+  if (validShippingCost > 0) {
+    mpItems.push({
+      id: "envio",
+      title: "Costo de envio",
+      quantity: 1,
+      unit_price: validShippingCost,
+      currency_id: "ARS",
+    })
+    total += validShippingCost
+  }
+
   const orderRow = {
     id: orderId,
     created_at: new Date().toISOString(),
@@ -97,6 +111,8 @@ export async function POST(req: Request) {
     direccion: shippingType === "envio" ? direccion || null : null,
     localidad: shippingType === "envio" ? localidad || null : null,
     provincia: shippingType === "envio" ? provincia || null : null,
+    codigo_postal: shippingType === "envio" ? codigoPostal || null : null,
+    shipping_cost: validShippingCost,
     payment_type: "Mercado Pago (pago online)",
     nota: nota || null,
     status: "pendiente",
