@@ -61,9 +61,13 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
 
   const outOfStock = !isEncargo && totalStock === 0
 
-  // si el producto trackea stock por talle, el estado de "sin stock" depende del talle elegido
+  // si el producto trackea stock por talle y ya se eligio uno, ese numero manda (incluso por encima
+  // del flag general "por encargo": si el talle elegido tiene unidades reales cargadas, se compra).
+  // sin esa info puntual, se cae al flag de encargo o al stock total.
   // los productos inactivos (sin precio/foto confirmada todavia) tambien se piden por encargo, no se bloquean
-  const needsBackorder = isInactive || isEncargo || (hasSizes && selectedSize ? stockForSize(selectedSize) <= 0 : outOfStock)
+  const needsBackorder = isInactive || (
+    usesSizeStock && selectedSize ? stockForSize(selectedSize) <= 0 : (isEncargo || outOfStock)
+  )
 
   function validateSelection(): boolean {
     let ok = true
