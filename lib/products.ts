@@ -611,3 +611,16 @@ export function formatPrice(price: number): string {
     maximumFractionDigits: 0,
   }).format(price)
 }
+
+// Slug legible para las URLs de producto (ej. "New Balance 9060" -> "new-balance-9060"),
+// asi el link no muestra el id interno (ej. "zap-016").
+const DIACRITICS_RE = new RegExp("[̀-ͯ]", "g")
+
+export function slugify(name: string): string {
+  return name
+    .normalize("NFD")
+    .replace(DIACRITICS_RE, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+}

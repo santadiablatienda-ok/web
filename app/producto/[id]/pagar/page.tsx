@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation"
-import { getProductById } from "@/lib/products-store"
+import { getProductBySlugOrId } from "@/lib/products-store"
 import { PaymentScreen } from "@/components/payment-screen"
 
 interface RouteProps {
@@ -14,7 +14,7 @@ export const metadata = {
 export default async function PagarRoute({ params, searchParams }: RouteProps) {
   const { id } = await params
   const sp = await searchParams
-  const product = await getProductById(id).catch(() => null)
+  const product = await getProductBySlugOrId(id).catch(() => null)
   if (!product) notFound()
 
   return <PaymentScreen product={product} initialSize={sp.talle} initialColor={sp.color} />

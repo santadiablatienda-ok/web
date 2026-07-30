@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase"
-import { products as seedProducts, categories as seedCategories, type Product, type Category } from "@/lib/products"
+import { products as seedProducts, categories as seedCategories, slugify, type Product, type Category } from "@/lib/products"
 
 // ─── Productos ────────────────────────────────────────────────────────────────
 // Fuente de verdad: tabla `products` en Supabase (compartida por todos los
@@ -94,6 +94,15 @@ export async function getProductById(id: string): Promise<Product | null> {
   const { data, error } = await supabase.from("products").select("*").eq("id", id).maybeSingle()
   if (error) throw error
   return data ? rowToProduct(data as ProductRow) : null
+}
+
+// Resuelve un producto por el slug legible de su nombre (usado en las URLs, ej. "new-balance-9060");
+// si no matchea ningun slug, prueba por id directo (compatibilidad con links viejos tipo "zap-016").
+export async function getProductBySlugOrId(slugOrId: string): Promise<Product | null> {
+  const all = await getProducts()
+  const bySlug = all.find((p) => slugify(p.name) === slugOrId)
+  if (bySlug) return bySlug
+  return all.find((p) => p.id === slugOrId) ?? null
 }
 
 export async function saveProducts(products: Product[]): Promise<void> {

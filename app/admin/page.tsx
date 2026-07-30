@@ -12,7 +12,7 @@ import { GalleryManager } from "@/components/gallery-manager"
 import { FolderImporter } from "@/components/folder-importer"
 import { isAuthenticated, logout } from "@/lib/auth"
 import { getProducts, saveProducts, deleteProduct, resetProducts, getCategories, saveCategories, deleteCategory, resetCategories } from "@/lib/products-store"
-import { categories as defaultCategories, formatPrice, type Product, type Category } from "@/lib/products"
+import { categories as defaultCategories, formatPrice, slugify, type Product, type Category } from "@/lib/products"
 import { getOrders, updateOrderStatus, deleteOrder, type Order } from "@/lib/orders-store"
 import { DEPOSIT_PERCENT } from "@/hooks/use-cart"
 
@@ -129,10 +129,10 @@ export default function AdminPage() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
-  function handleCopyLink(productId: string) {
-    const url = `${window.location.origin}/producto/${productId}`
+  function handleCopyLink(product: Product) {
+    const url = `${window.location.origin}/producto/${slugify(product.name)}`
     navigator.clipboard.writeText(url).then(() => {
-      setCopiedId(productId)
+      setCopiedId(product.id)
       setTimeout(() => setCopiedId(null), 1800)
     }).catch(() => {})
   }
@@ -505,7 +505,7 @@ export default function AdminPage() {
                       }}>
                       <Pencil size={12} /> {editingId === product.id ? "Cerrar" : "Editar"}
                     </button>
-                    <IconButton onClick={() => handleCopyLink(product.id)}>
+                    <IconButton onClick={() => handleCopyLink(product)}>
                       {copiedId === product.id ? <CheckCircle2 size={13} /> : <Link2 size={13} />}
                     </IconButton>
                     <IconButton danger onClick={() => setConfirmDelete(product.id)}>

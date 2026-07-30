@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { getProductById } from "@/lib/products-store"
-import { finalPrice, formatPrice } from "@/lib/products"
+import { getProductBySlugOrId } from "@/lib/products-store"
+import { finalPrice, formatPrice, slugify } from "@/lib/products"
 import { getSiteUrl } from "@/lib/mercadopago"
 import { ProductPage } from "@/components/product-page"
 
@@ -11,7 +11,7 @@ interface RouteProps {
 
 export async function generateMetadata({ params }: RouteProps): Promise<Metadata> {
   const { id } = await params
-  const product = await getProductById(id).catch(() => null)
+  const product = await getProductBySlugOrId(id).catch(() => null)
   if (!product) return { title: "Producto no encontrado — Santa Diabla" }
 
   const price = finalPrice(product)
@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: RouteProps): Promise<Metadata
     openGraph: {
       title: product.name,
       description,
-      url: `${siteUrl}/producto/${product.id}`,
+      url: `${siteUrl}/producto/${slugify(product.name)}`,
       siteName: "Santa Diabla",
       images: product.image ? [{ url: product.image }] : undefined,
     },
@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: RouteProps): Promise<Metadata
 
 export default async function ProductRoute({ params }: RouteProps) {
   const { id } = await params
-  const product = await getProductById(id).catch(() => null)
+  const product = await getProductBySlugOrId(id).catch(() => null)
   if (!product) notFound()
 
   return <ProductPage product={product} />

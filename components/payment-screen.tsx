@@ -6,7 +6,7 @@ import {
   ChevronLeft, Minus, Plus, User, Package, CreditCard,
   Truck, Store, Banknote, Wallet, MessageCircle, Loader2, Hash,
 } from "lucide-react"
-import { type Product, formatPrice, finalPrice } from "@/lib/products"
+import { type Product, formatPrice, finalPrice, slugify } from "@/lib/products"
 import { saveOrder, type Order } from "@/lib/orders-store"
 
 interface PaymentScreenProps {
@@ -228,7 +228,7 @@ export function PaymentScreen({ product, initialSize, initialColor }: PaymentScr
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: "#F5F5F5" }}>
       <header className="border-b shrink-0" style={{ backgroundColor: "#fff", borderColor: border }}>
         <div className="max-w-3xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between">
-          <Link href={`/producto/${product.id}`} className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider transition-opacity hover:opacity-60" style={{ color: textSecondary, letterSpacing: "0.08em" }}>
+          <Link href={`/producto/${slugify(product.name)}`} className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider transition-opacity hover:opacity-60" style={{ color: textSecondary, letterSpacing: "0.08em" }}>
             <ChevronLeft size={14} /> Volver
           </Link>
           <p className="text-sm font-black uppercase tracking-wider" style={{ letterSpacing: "0.08em" }}>Santa Diabla.</p>

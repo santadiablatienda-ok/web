@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { ShoppingCart, CheckCircle2, PackagePlus, ChevronLeft, ChevronRight, X } from "lucide-react"
-import { type Product, formatPrice, finalPrice } from "@/lib/products"
+import { type Product, formatPrice, finalPrice, slugify } from "@/lib/products"
 
 interface ProductCardProps {
   product: Product
@@ -173,7 +173,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
           <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "#9E9E9E", letterSpacing: "0.1em" }}>
             {product.category.replace(/-/g, " ")}
           </p>
-          <Link href={`/producto/${product.id}`} className="hover:underline">
+          <Link href={`/producto/${slugify(product.name)}`} className="hover:underline">
             <h3 className="text-sm font-bold leading-snug" style={{ color: "#000" }}>
               {product.name}
             </h3>

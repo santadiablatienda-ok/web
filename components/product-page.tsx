@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { ChevronLeft, ChevronRight, X, ShoppingCart, CheckCircle2, PackagePlus, Zap } from "lucide-react"
-import { type Product, formatPrice, finalPrice } from "@/lib/products"
+import { type Product, formatPrice, finalPrice, slugify } from "@/lib/products"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { WhatsAppButton } from "@/components/whatsapp-button"
@@ -96,7 +96,7 @@ export function ProductPage({ product }: ProductPageProps) {
     const params = new URLSearchParams()
     if (selectedSize) params.set("talle", selectedSize)
     if (effectiveColor) params.set("color", effectiveColor)
-    router.push(`/producto/${product.id}/pagar?${params.toString()}`)
+    router.push(`/producto/${slugify(product.name)}/pagar?${params.toString()}`)
   }
 
   function nextPhoto() {
