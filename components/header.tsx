@@ -15,13 +15,13 @@ export function Header({ cartCount, onCartOpen, onSearchSubmit }: HeaderProps) {
   const [searchValue, setSearchValue] = useState("")
 
   const menuLinks = [
-    { label: "Nosotros",    href: "#nosotros" },
-    { label: "Catalogo",    href: "#catalogo" },
-    { label: "Botas",       href: "#botas" },
-    { label: "Importados",  href: "#importados" },
-    { label: "Ojotas",      href: "#ojotas" },
-    { label: "Chicos",      href: "#chicos" },
-    { label: "Por Encargo", href: "#encargo" },
+    { label: "Nosotros",    href: "/#nosotros" },
+    { label: "Catalogo",    href: "/#catalogo" },
+    { label: "Botas",       href: "/#botas" },
+    { label: "Importados",  href: "/#importados" },
+    { label: "Ojotas",      href: "/#ojotas" },
+    { label: "Chicos",      href: "/#chicos" },
+    { label: "Por Encargo", href: "/#encargo" },
   ]
 
   function handleSearchSubmit(e: React.FormEvent) {
@@ -88,7 +88,7 @@ export function Header({ cartCount, onCartOpen, onSearchSubmit }: HeaderProps) {
 
           {/* Logo */}
           <Link
-            href="#inicio"
+            href="/#inicio"
             className="text-xl font-black tracking-tight uppercase flex-shrink-0"
             style={{ color: "#000", letterSpacing: "-0.02em" }}
           >
@@ -97,7 +97,7 @@ export function Header({ cartCount, onCartOpen, onSearchSubmit }: HeaderProps) {
 
           {/* Inicio */}
           <a
-            href="#inicio"
+            href="/#inicio"
             className="inline text-xs font-semibold uppercase tracking-wider transition-opacity hover:opacity-50 whitespace-nowrap flex-shrink-0"
             style={{ color: "#000", letterSpacing: "0.08em" }}
           >

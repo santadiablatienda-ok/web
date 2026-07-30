@@ -83,7 +83,16 @@ npm run dev
 - Arquitectura: productos/categorías/pedidos ya migraron a Supabase (commit `bc63051`), esto de acá abajo quedó obsoleto respecto a versiones viejas de este archivo — no está en localStorage.
 - Si el repo sigue sumando videos pesados, evaluar Git LFS (ver warning de GitHub arriba).
 - `components/folder-importer.tsx` (importador desde el admin, en el navegador) tiene los mismos bugs que tenía el script Node antes de esta sesión (no adivina categoría, no convierte HEIC) — no se tocó, se sigue usando `scripts/import-catalogo.mjs` como camino confiable para cargas masivas.
-- Quick wins de diseño/UX pendientes de evaluar con el usuario (ver punto 10 de la sesión 2026-07-20/21): buscador, wishlist, guía de talles, filtros/orden en catálogo, páginas de detalle de producto.
+- Quick wins de diseño/UX pendientes de evaluar con el usuario (ver punto 10 de la sesión 2026-07-20/21): buscador, wishlist, guía de talles, filtros/orden en catálogo. (Páginas de detalle de producto: hecho, ver sesión 2026-07-30.)
+
+## Qué se hizo (sesión 2026-07-30)
+
+1. **Página propia por producto**: `app/producto/[id]/page.tsx` (server component, con `generateMetadata` para titulo/OG/Twitter card — al compartir el link por WhatsApp/Instagram se ve foto+precio) renderiza `components/product-page.tsx` (galeria, specs, color/talle, y CTA "Comprar ahora" o "Agregar al carrito" — misma logica de stock/encargo que `product-card.tsx`). URL: `/producto/<id-del-producto>` (ej. `/producto/bot-005`), usando el id existente como slug — no se agrego campo `slug` nuevo.
+2. **Pantalla de pago dedicada por producto** (pensada para promociones — mandar el link de un producto puntual y que compre directo, sin pasar por el carrito general): `app/producto/[id]/pagar/page.tsx` + `components/payment-screen.tsx`. Formulario propio (no reutiliza el `cart-drawer`) con datos personales, entrega, y Mercado Pago o WhatsApp/transferencia — reutiliza tal cual el endpoint existente `/api/mercadopago/create-preference` (ya aceptaba `items[]` generico, no hizo falta tocarlo). Los productos "por encargo" no llegan a esta pantalla: en `product-page.tsx` siguen mostrando solo el boton de "Pedir por encargo" (sin pago online), igual que en el catalogo.
+3. **Boton "Copiar link" en el panel admin** (icono cadena junto a Editar/Eliminar en cada fila de producto) — copia `origin/producto/<id>` al portapapeles para pegarlo directo en una promo.
+4. `product-card.tsx`: el nombre del producto en el catalogo ahora es un link a su pagina propia.
+5. `header.tsx`: los anchors del menu (`#catalogo`, `#nosotros`, etc.) se cambiaron a `/#catalogo` etc. para que sigan funcionando estando parado en `/producto/...` y no solo en la home.
+6. Se encontro y reinicio un `next dev` que llevaba **47+ horas corriendo** y tenia los workers de compilacion (Jest workers, usados por SWC) crasheados — tiraba "Jest worker encountered 2 child process exceptions" en cualquier pagina. No relacionado a este cambio, pero bloqueaba probar en local. Si vuelve a pasar tras una sesion muy larga de `npm run dev`, reiniciar el proceso soluciona.
 
 ## Cómo prefiere trabajar el usuario
 

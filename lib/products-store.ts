@@ -90,6 +90,12 @@ export async function getProducts(): Promise<Product[]> {
   return (data as ProductRow[]).map(rowToProduct)
 }
 
+export async function getProductById(id: string): Promise<Product | null> {
+  const { data, error } = await supabase.from("products").select("*").eq("id", id).maybeSingle()
+  if (error) throw error
+  return data ? rowToProduct(data as ProductRow) : null
+}
+
 export async function saveProducts(products: Product[]): Promise<void> {
   if (products.length === 0) return
   const { error } = await supabase.from("products").upsert(products.map(productToRow), { onConflict: "id" })

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import {
   LogOut, Search, Plus, Pencil, Trash2, Save, X,
   ShoppingBag, Package, Tag, RotateCcw, CheckCircle2, ExternalLink,
-  Palette, FolderPlus,
+  Palette, FolderPlus, Link2,
 } from "lucide-react"
 import { ImageUploader } from "@/components/image-uploader"
 import { GalleryManager } from "@/components/gallery-manager"
@@ -127,6 +127,15 @@ export default function AdminPage() {
   const [editForm, setEditForm] = useState<Omit<Product, "id">>(emptyProduct())
   const [isNew, setIsNew] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+
+  function handleCopyLink(productId: string) {
+    const url = `${window.location.origin}/producto/${productId}`
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedId(productId)
+      setTimeout(() => setCopiedId(null), 1800)
+    }).catch(() => {})
+  }
 
   // Categories
   const [categories, setCategories] = useState<Category[]>([])
@@ -496,6 +505,9 @@ export default function AdminPage() {
                       }}>
                       <Pencil size={12} /> {editingId === product.id ? "Cerrar" : "Editar"}
                     </button>
+                    <IconButton onClick={() => handleCopyLink(product.id)}>
+                      {copiedId === product.id ? <CheckCircle2 size={13} /> : <Link2 size={13} />}
+                    </IconButton>
                     <IconButton danger onClick={() => setConfirmDelete(product.id)}>
                       <Trash2 size={13} />
                     </IconButton>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import { ShoppingCart, CheckCircle2, PackagePlus, ChevronLeft, ChevronRight, X } from "lucide-react"
 import { type Product, formatPrice, finalPrice } from "@/lib/products"
 
@@ -172,9 +173,11 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
           <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "#9E9E9E", letterSpacing: "0.1em" }}>
             {product.category.replace(/-/g, " ")}
           </p>
-          <h3 className="text-sm font-bold leading-snug" style={{ color: "#000" }}>
-            {product.name}
-          </h3>
+          <Link href={`/producto/${product.id}`} className="hover:underline">
+            <h3 className="text-sm font-bold leading-snug" style={{ color: "#000" }}>
+              {product.name}
+            </h3>
+          </Link>
           <p className="text-xs leading-relaxed mt-1" style={{ color: "#9E9E9E" }}>
             {product.description}
           </p>
