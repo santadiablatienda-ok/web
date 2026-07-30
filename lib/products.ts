@@ -21,6 +21,7 @@ export interface Product {
   colors?: string[]
   discountPercent?: number  // 0-100, descuento simple sobre el precio
   season?: string           // etiqueta libre, ej: "Verano 2026", "Invierno 2026"
+  onSale?: boolean          // incluido a mano en el carrusel "Sale" del home (independiente del descuento)
 }
 
 export function finalPrice(product: Pick<Product, "price" | "discountPercent">): number {

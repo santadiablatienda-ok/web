@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Header } from "@/components/header"
 import { Hero } from "@/components/hero"
 import { CategoryBanners } from "@/components/category-banners"
-import { PromotionsCarousel } from "@/components/promotions-carousel"
+import { SaleCarousel } from "@/components/sale-carousel"
 import { AboutSection } from "@/components/about-section"
 import { FeaturedSection } from "@/components/featured-section"
 import { Catalog } from "@/components/catalog"
@@ -40,7 +40,7 @@ export default function HomePage() {
       <main className="flex-1">
         <Hero />
         <CategoryBanners />
-        <PromotionsCarousel onAddToCart={handleAddToCart} />
+        <SaleCarousel onAddToCart={handleAddToCart} />
         <AboutSection />
         <FeaturedSection onAddToCart={handleAddToCart} />
         <Catalog onAddToCart={handleAddToCart} search={search} onSearchChange={setSearch} />

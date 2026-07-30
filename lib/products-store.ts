@@ -28,6 +28,7 @@ interface ProductRow {
   discount_percent: number | null
   season: string | null
   active: boolean
+  on_sale: boolean | null
 }
 
 function rowToProduct(r: ProductRow): Product {
@@ -54,6 +55,7 @@ function rowToProduct(r: ProductRow): Product {
     discountPercent: r.discount_percent ?? undefined,
     season: r.season ?? undefined,
     active: r.active,
+    onSale: r.on_sale ?? false,
   }
 }
 
@@ -81,6 +83,7 @@ function productToRow(p: Product): ProductRow {
     discount_percent: p.discountPercent ?? null,
     season: p.season ?? null,
     active: p.active !== false,
+    on_sale: !!p.onSale,
   }
 }
 

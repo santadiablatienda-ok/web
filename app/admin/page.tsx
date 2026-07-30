@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import {
   LogOut, Search, Plus, Pencil, Trash2, Save, X,
   ShoppingBag, Package, Tag, RotateCcw, CheckCircle2, ExternalLink,
-  Palette, FolderPlus, Link2,
+  Palette, FolderPlus, Link2, Flame,
 } from "lucide-react"
 import { ImageUploader } from "@/components/image-uploader"
 import { GalleryManager } from "@/components/gallery-manager"
@@ -114,7 +114,7 @@ function IconButton({ children, onClick, danger }: { children: React.ReactNode; 
 export default function AdminPage() {
   const router = useRouter()
   const [checking, setChecking] = useState(true)
-  const [activeTab, setActiveTab] = useState<"products" | "categories" | "orders" | "metrics">("products")
+  const [activeTab, setActiveTab] = useState<"products" | "categories" | "orders" | "metrics" | "sale">("products")
   const [orders, setOrders] = useState<Order[]>([])
   const [saved, setSaved] = useState(false)
 
@@ -322,11 +322,12 @@ export default function AdminPage() {
           {[
             { id: "products", label: "Productos", icon: Package },
             { id: "categories", label: "Categorias", icon: Tag },
+            { id: "sale", label: "Sale", icon: Flame },
             { id: "orders", label: "Pedidos", icon: ShoppingBag },
             { id: "metrics", label: "Metricas", icon: CheckCircle2 },
           ].map(({ id, label, icon: Icon }) => (
             <button key={id}
-              onClick={() => setActiveTab(id as "products" | "categories" | "orders" | "metrics")}
+              onClick={() => setActiveTab(id as "products" | "categories" | "orders" | "metrics" | "sale")}
               className="flex items-center gap-2 px-5 py-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all whitespace-nowrap"
               style={{
                 borderColor: activeTab === id ? c.black : "transparent",
@@ -665,6 +666,13 @@ export default function AdminPage() {
         )}
 
         {/* ══════════════════════════════════════════════════════════════════════
+            TAB: SALE
+        ══════════════════════════════════════════════════════════════════════ */}
+        {activeTab === "sale" && (
+          <SaleTab products={products} setProducts={setProducts} triggerSaved={triggerSaved} reportError={reportError} />
+        )}
+
+        {/* ══════════════════════════════════════════════════════════════════════
             TAB: PEDIDOS
         ══════════════════════════════════════════════════════════════════════ */}
         {activeTab === "orders" && (
@@ -968,6 +976,116 @@ export default function AdminPage() {
 }
 
 // ─── ProductForm ──────────────────────────────────────────────────────────────
+
+function SaleTab({
+  products, setProducts, triggerSaved, reportError,
+}: {
+  products: Product[]
+  setProducts: React.Dispatch<React.SetStateAction<Product[]>>
+  triggerSaved: () => void
+  reportError: (action: string, e: unknown) => void
+}) {
+  const [search, setSearch] = useState("")
+
+  const filtered = products
+    .filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => {
+      if (!!a.onSale !== !!b.onSale) return a.onSale ? -1 : 1
+      return a.name.localeCompare(b.name)
+    })
+
+  const inSaleCount = products.filter((p) => p.onSale).length
+
+  function patch(product: Product, fields: Partial<Product>) {
+    const updated = { ...product, ...fields }
+    saveProducts([updated])
+      .then(() => { setProducts((prev) => prev.map((p) => p.id === product.id ? updated : p)); triggerSaved() })
+      .catch((e) => reportError("actualizar el producto", e))
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="border p-5" style={{ backgroundColor: c.white, borderColor: c.gray200 }}>
+        <div className="flex items-center gap-2 mb-1">
+          <Flame size={16} style={{ color: c.accent }} />
+          <p className="text-sm font-black uppercase tracking-wide" style={{ color: c.black }}>Sección Sale del home</p>
+        </div>
+        <p className="text-xs" style={{ color: c.gray400 }}>
+          Los productos marcados "En sale" aparecen en el carrusel debajo del banner de ofertas en la tienda.
+          El % de descuento se aplica en toda la web (catálogo, esta sección, y el precio final que paga el cliente).
+        </p>
+        <p className="text-xs font-bold mt-2" style={{ color: c.black }}>
+          {inSaleCount} producto{inSaleCount === 1 ? "" : "s"} en sale ahora mismo.
+        </p>
+      </div>
+
+      <div className="relative">
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: c.gray400 }} />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar producto por nombre..."
+          className="w-full pl-9 pr-3 py-2.5 text-sm border outline-none"
+          style={inputStyle}
+        />
+      </div>
+
+      <div className="border" style={{ backgroundColor: c.white, borderColor: c.gray200 }}>
+        <div className="max-h-[36rem] overflow-y-auto">
+          <table className="w-full text-xs border-collapse">
+            <thead className="sticky top-0" style={{ backgroundColor: c.gray50 }}>
+              <tr className="text-left" style={{ color: c.gray400 }}>
+                <th className="py-3 pl-5 pr-2 font-bold uppercase" style={{ letterSpacing: "0.04em" }}>Producto</th>
+                <th className="py-3 pr-2 font-bold uppercase" style={{ letterSpacing: "0.04em" }}>Precio</th>
+                <th className="py-3 pr-2 font-bold uppercase" style={{ letterSpacing: "0.04em" }}>Descuento %</th>
+                <th className="py-3 pr-5 font-bold uppercase" style={{ letterSpacing: "0.04em" }}>En sale</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((product) => (
+                <tr key={product.id} className="border-t" style={{ borderColor: c.gray100 }}>
+                  <td className="py-2.5 pl-5 pr-2 max-w-[16rem] truncate font-semibold" style={{ color: c.black }} title={product.name}>
+                    {product.name}
+                  </td>
+                  <td className="py-2.5 pr-2" style={{ color: c.gray600 }}>{formatPrice(product.price)}</td>
+                  <td className="py-2.5 pr-2">
+                    <input
+                      key={`${product.id}-discount-${product.discountPercent ?? 0}`}
+                      type="number" min={0} max={90}
+                      defaultValue={product.discountPercent ?? 0}
+                      onFocus={(e) => e.target.select()}
+                      onBlur={(e) => {
+                        const v = Number(e.target.value)
+                        if (v !== (product.discountPercent ?? 0)) patch(product, { discountPercent: v })
+                      }}
+                      className="w-16 px-2 py-1 border text-xs" style={inputStyle}
+                    />
+                  </td>
+                  <td className="py-2.5 pr-5">
+                    <button
+                      onClick={() => patch(product, { onSale: !product.onSale })}
+                      className="text-xs font-bold uppercase tracking-wide px-3 py-1.5 border transition-all hover:opacity-80 w-fit"
+                      style={{
+                        borderColor: product.onSale ? c.black : c.gray200,
+                        color: product.onSale ? c.white : c.gray400,
+                        backgroundColor: product.onSale ? c.black : c.white,
+                      }}
+                    >
+                      {product.onSale ? "En sale" : "Agregar"}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 && (
+                <tr><td colSpan={4} className="py-10 text-center" style={{ color: c.gray400 }}>Sin resultados</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 interface ProductFormProps {
   form: Omit<Product, "id">
