@@ -40,7 +40,7 @@ export default function HomePage() {
       <main className="flex-1">
         <Hero />
         <CategoryBanners />
-        <SaleCarousel onAddToCart={handleAddToCart} />
+        <SaleCarousel />
         <AboutSection />
         <FeaturedSection onAddToCart={handleAddToCart} />
         <Catalog onAddToCart={handleAddToCart} search={search} onSearchChange={setSearch} />
