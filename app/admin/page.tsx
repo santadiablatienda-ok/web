@@ -40,7 +40,7 @@ function emptyProduct(): Omit<Product, "id"> {
   return {
     name: "", description: "", specs: [], price: 0, cost: 0, category: "botas", brand: "",
     image: "", imageAlt: "", gallery: [], badge: "",
-    featured: false, colors: [], sizes: [], sizeStock: {}, stock: 10, isEncargo: false, active: true,
+    featured: false, colors: [], colorStock: {}, sizes: [], sizeStock: {}, stock: 10, isEncargo: false, active: true,
     discountPercent: 0, season: "",
   }
 }
@@ -52,6 +52,9 @@ function generateId(prefix = "prod"): string {
 function productStock(p: Product): number {
   if (p.sizes && p.sizes.length > 0 && p.sizeStock && Object.keys(p.sizeStock).length > 0) {
     return Object.values(p.sizeStock).reduce((a, b) => a + (b || 0), 0)
+  }
+  if (p.colors && p.colors.length > 0 && p.colorStock && Object.keys(p.colorStock).length > 0) {
+    return Object.values(p.colorStock).reduce((a, b) => a + (b || 0), 0)
   }
   return p.stock ?? 0
 }
@@ -71,6 +74,29 @@ function initSizeStock(p: Product): Record<string, number> {
   const remainder = sizes.length > 0 ? total % sizes.length : 0
   const result: Record<string, number> = {}
   sizes.forEach((s, i) => { result[s] = base + (i < remainder ? 1 : 0) })
+  return result
+}
+
+// Mismo criterio que initSizeStock, pero para colores. Si el producto ya reparte el stock por
+// talle, el stock plano ya "pertenece" a los talles, así que los colores arrancan en 0 en vez de
+// repartirse de nuevo (evitaría contar el mismo stock dos veces).
+function initColorStock(p: Product): Record<string, number> {
+  const colors = p.colors ?? []
+  if (p.colorStock && Object.keys(p.colorStock).length > 0) {
+    const result: Record<string, number> = {}
+    colors.forEach((col) => { result[col] = p.colorStock![col] ?? 0 })
+    return result
+  }
+  const usesSizeStockAlready = !!p.sizeStock && Object.keys(p.sizeStock).length > 0
+  const result: Record<string, number> = {}
+  if (usesSizeStockAlready) {
+    colors.forEach((col) => { result[col] = 0 })
+    return result
+  }
+  const total = Math.max(0, p.stock ?? 0)
+  const base = colors.length > 0 ? Math.floor(total / colors.length) : 0
+  const remainder = colors.length > 0 ? total % colors.length : 0
+  colors.forEach((col, i) => { result[col] = base + (i < remainder ? 1 : 0) })
   return result
 }
 
@@ -188,7 +214,7 @@ export default function AdminPage() {
 
   function handleEdit(p: Product) {
     setEditingId(p.id)
-    setEditForm({ ...p, colors: p.colors ?? [], sizeStock: initSizeStock(p) })
+    setEditForm({ ...p, colors: p.colors ?? [], sizeStock: initSizeStock(p), colorStock: initColorStock(p) })
     setIsNew(false)
   }
 
@@ -1105,7 +1131,7 @@ function ProductForm({ form, setForm, categories, isNew, onSave, onCancel }: Pro
   const addColor = () => {
     const v = colorInput.trim()
     if (v && !(form.colors ?? []).includes(v)) {
-      f("colors", [...(form.colors ?? []), v])
+      setForm({ ...form, colors: [...(form.colors ?? []), v], colorStock: { ...(form.colorStock ?? {}), [v]: 0 } })
       setColorInput("")
     }
   }
@@ -1126,7 +1152,13 @@ function ProductForm({ form, setForm, categories, isNew, onSave, onCancel }: Pro
   const setSizeStock = (s: string, qty: number) =>
     f("sizeStock", { ...(form.sizeStock ?? {}), [s]: Math.max(0, qty) })
 
-  const removeColor = (col: string) => f("colors", (form.colors ?? []).filter((x) => x !== col))
+  const removeColor = (col: string) => {
+    const { [col]: _removed, ...restStock } = form.colorStock ?? {}
+    setForm({ ...form, colors: (form.colors ?? []).filter((x) => x !== col), colorStock: restStock })
+  }
+
+  const setColorStock = (col: string, qty: number) =>
+    f("colorStock", { ...(form.colorStock ?? {}), [col]: Math.max(0, qty) })
 
   const isValid = form.name.trim() !== ""
 
@@ -1265,16 +1297,24 @@ function ProductForm({ form, setForm, categories, isNew, onSave, onCancel }: Pro
             </button>
           </div>
           {(form.colors ?? []).length > 0 && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col gap-1.5">
               {(form.colors ?? []).map((col) => (
-                <span key={col} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border"
-                  style={{ borderColor: c.gray200, color: c.black }}>
-                  {col}
-                  <button onClick={() => removeColor(col)} type="button">
-                    <X size={11} />
+                <div key={col} className="flex items-center gap-2 px-3 py-1.5 border"
+                  style={{ borderColor: c.gray200, backgroundColor: c.gray50 }}>
+                  <span className="text-xs font-semibold w-28 truncate" style={{ color: c.black }} title={col}>{col}</span>
+                  <input type="number" min={0} value={form.colorStock?.[col] ?? 0}
+                    onChange={(e) => setColorStock(col, Number(e.target.value))}
+                    className="w-20 px-2 py-1 text-xs border outline-none focus:border-black"
+                    style={{ borderColor: c.gray200, backgroundColor: c.white, color: c.black }} />
+                  <span className="text-xs" style={{ color: c.gray400 }}>en stock</span>
+                  <button onClick={() => removeColor(col)} type="button" className="ml-auto" style={{ color: c.gray400 }}>
+                    <X size={13} />
                   </button>
-                </span>
+                </div>
               ))}
+              <p className="text-xs" style={{ color: c.gray400 }}>
+                Un color en 0 se ofrece como pedido por encargo (seña {DEPOSIT_PERCENT}%).
+              </p>
             </div>
           )}
         </div>
@@ -1321,6 +1361,13 @@ function ProductForm({ form, setForm, categories, isNew, onSave, onCancel }: Pro
             <label className={labelClass} style={labelStyle}>Stock general</label>
             <div className={inputClass} style={{ ...inputStyle, color: c.gray400, backgroundColor: c.gray50 }}>
               {Object.values(form.sizeStock ?? {}).reduce((a, b) => a + (b || 0), 0)} (calculado por talle)
+            </div>
+          </div>
+        ) : (form.colors ?? []).length > 0 ? (
+          <div className="flex flex-col gap-1.5">
+            <label className={labelClass} style={labelStyle}>Stock general</label>
+            <div className={inputClass} style={{ ...inputStyle, color: c.gray400, backgroundColor: c.gray50 }}>
+              {Object.values(form.colorStock ?? {}).reduce((a, b) => a + (b || 0), 0)} (calculado por color)
             </div>
           </div>
         ) : (

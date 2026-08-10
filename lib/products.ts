@@ -19,6 +19,7 @@ export interface Product {
   isEncargo?: boolean
   active?: boolean      // false = desactivado a mano: se muestra "Agotado" en la tienda pero no se puede comprar ni encargar (default true)
   colors?: string[]
+  colorStock?: Record<string, number>  // stock puntual por color; si falta un color acá se toma como 0
   discountPercent?: number  // 0-100, descuento simple sobre el precio
   season?: string           // etiqueta libre, ej: "Verano 2026", "Invierno 2026"
   onSale?: boolean          // incluido a mano en el carrusel "Sale" del home (independiente del descuento)

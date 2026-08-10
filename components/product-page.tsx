@@ -47,6 +47,7 @@ export function ProductPage({ product }: ProductPageProps) {
   const hasColors = product.colors && product.colors.length > 1
   const isEncargo = product.isEncargo
   const usesSizeStock = hasSizes && !!product.sizeStock && Object.keys(product.sizeStock).length > 0
+  const usesColorStock = hasColors && !!product.colorStock && Object.keys(product.colorStock).length > 0
   const hasDiscount = !!product.discountPercent && product.discountPercent > 0
   const priceNow = finalPrice(product)
 
@@ -55,14 +56,23 @@ export function ProductPage({ product }: ProductPageProps) {
     return product.stock ?? 0
   }
 
+  function stockForColor(color: string): number {
+    if (usesColorStock) return product.colorStock![color] ?? 0
+    return product.stock ?? 0
+  }
+
   const totalStock = usesSizeStock
     ? Object.values(product.sizeStock!).reduce((a, b) => a + b, 0)
+    : usesColorStock
+    ? Object.values(product.colorStock!).reduce((a, b) => a + b, 0)
     : (product.stock ?? 0)
 
   const outOfStock = !isEncargo && totalStock === 0
 
   const needsBackorder = isInactive || (
-    usesSizeStock && selectedSize ? stockForSize(selectedSize) <= 0 : (isEncargo || outOfStock)
+    usesSizeStock && selectedSize ? stockForSize(selectedSize) <= 0 :
+    usesColorStock && selectedColor ? stockForColor(selectedColor) <= 0 :
+    (isEncargo || outOfStock)
   )
 
   const singleColor = product.colors && product.colors.length === 1 ? product.colors[0] : undefined
@@ -219,8 +229,9 @@ export function ProductPage({ product }: ProductPageProps) {
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#5C5C5C", letterSpacing: "0.08em" }}>Color</p>
                 <div className="flex flex-wrap gap-2">
-                  {product.colors.map((color) =>
-                    hasColors ? (
+                  {product.colors.map((color) => {
+                    const colorOut = usesColorStock && stockForColor(color) <= 0
+                    return hasColors ? (
                       <button
                         key={color}
                         onClick={() => { setSelectedColor(color); setColorError(false) }}
@@ -228,19 +239,26 @@ export function ProductPage({ product }: ProductPageProps) {
                         style={{
                           borderColor: selectedColor === color ? "#000" : colorError ? "#E63946" : "#E0E0E0",
                           backgroundColor: selectedColor === color ? "#000" : "transparent",
-                          color: selectedColor === color ? "#fff" : "#000",
+                          color: selectedColor === color ? "#fff" : colorOut ? "#B0B0B0" : "#000",
                         }}
                       >
-                        {color}
+                        {color}{colorOut ? " ·" : ""}
                       </button>
                     ) : (
                       <span key={color} className="px-3 py-1.5 text-xs font-semibold border" style={{ borderColor: "#000", backgroundColor: "#000", color: "#fff" }}>
                         {color}
                       </span>
                     )
-                  )}
+                  })}
                 </div>
                 {colorError && <p className="text-xs mt-1.5 font-semibold" style={{ color: "#E63946" }}>Selecciona un color antes de continuar</p>}
+                {usesColorStock && selectedColor && (
+                  stockForColor(selectedColor) > 0 ? (
+                    <p className="text-xs mt-1.5" style={{ color: "#5C5C5C" }}>Stock disponible: {stockForColor(selectedColor)} unidades</p>
+                  ) : (
+                    <p className="text-xs mt-1.5 font-semibold" style={{ color: "#E63946" }}>Color {selectedColor} sin stock — se pide por encargo</p>
+                  )
+                )}
               </div>
             )}
 

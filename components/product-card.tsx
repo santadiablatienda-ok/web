@@ -48,6 +48,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   const hasColors = product.colors && product.colors.length > 1
   const isEncargo = product.isEncargo
   const usesSizeStock = hasSizes && !!product.sizeStock && Object.keys(product.sizeStock).length > 0
+  const usesColorStock = hasColors && !!product.colorStock && Object.keys(product.colorStock).length > 0
   const hasDiscount = !!product.discountPercent && product.discountPercent > 0
   const priceNow = finalPrice(product)
 
@@ -56,8 +57,15 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
     return product.stock ?? 0
   }
 
+  function stockForColor(color: string): number {
+    if (usesColorStock) return product.colorStock![color] ?? 0
+    return product.stock ?? 0
+  }
+
   const totalStock = usesSizeStock
     ? Object.values(product.sizeStock!).reduce((a, b) => a + b, 0)
+    : usesColorStock
+    ? Object.values(product.colorStock!).reduce((a, b) => a + b, 0)
     : (product.stock ?? 0)
 
   const outOfStock = !isEncargo && totalStock === 0
@@ -67,7 +75,9 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   // sin esa info puntual, se cae al flag de encargo o al stock total.
   // los productos inactivos (sin precio/foto confirmada todavia) tambien se piden por encargo, no se bloquean
   const needsBackorder = isInactive || (
-    usesSizeStock && selectedSize ? stockForSize(selectedSize) <= 0 : (isEncargo || outOfStock)
+    usesSizeStock && selectedSize ? stockForSize(selectedSize) <= 0 :
+    usesColorStock && selectedColor ? stockForColor(selectedColor) <= 0 :
+    (isEncargo || outOfStock)
   )
 
   function validateSelection(): boolean {
@@ -225,8 +235,9 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
               Color
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {product.colors.map((color) =>
-                hasColors ? (
+              {product.colors.map((color) => {
+                const colorOut = usesColorStock && stockForColor(color) <= 0
+                return hasColors ? (
                   <button
                     key={color}
                     onClick={() => { setSelectedColor(color); setColorError(false) }}
@@ -234,10 +245,10 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
                     style={{
                       borderColor: selectedColor === color ? "#000" : colorError ? "#E63946" : "#E0E0E0",
                       backgroundColor: selectedColor === color ? "#000" : "transparent",
-                      color: selectedColor === color ? "#fff" : "#000",
+                      color: selectedColor === color ? "#fff" : colorOut ? "#B0B0B0" : "#000",
                     }}
                   >
-                    {color}
+                    {color}{colorOut ? " ·" : ""}
                   </button>
                 ) : (
                   <span
@@ -248,12 +259,19 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
                     {color}
                   </span>
                 )
-              )}
+              })}
             </div>
             {colorError && (
               <p className="text-xs mt-1.5 font-semibold" style={{ color: "#E63946" }}>
                 Selecciona un color antes de agregar
               </p>
+            )}
+            {usesColorStock && selectedColor && (
+              stockForColor(selectedColor) > 0 ? (
+                <p className="text-xs mt-1.5" style={{ color: "#5C5C5C" }}>Stock disponible: {stockForColor(selectedColor)} unidades</p>
+              ) : (
+                <p className="text-xs mt-1.5 font-semibold" style={{ color: "#E63946" }}>Sin stock en {selectedColor} — se pide por encargo</p>
+              )
             )}
           </div>
         )}

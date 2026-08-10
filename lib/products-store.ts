@@ -25,6 +25,7 @@ interface ProductRow {
   size_stock: Record<string, number>
   is_encargo: boolean
   colors: string[]
+  color_stock: Record<string, number>
   discount_percent: number | null
   season: string | null
   active: boolean
@@ -52,6 +53,7 @@ function rowToProduct(r: ProductRow): Product {
     sizeStock: r.size_stock && Object.keys(r.size_stock).length ? r.size_stock : undefined,
     isEncargo: r.is_encargo,
     colors: r.colors?.length ? r.colors : undefined,
+    colorStock: r.color_stock && Object.keys(r.color_stock).length ? r.color_stock : undefined,
     discountPercent: r.discount_percent ?? undefined,
     season: r.season ?? undefined,
     active: r.active,
@@ -80,6 +82,7 @@ function productToRow(p: Product): ProductRow {
     size_stock: p.sizeStock ?? {},
     is_encargo: !!p.isEncargo,
     colors: p.colors ?? [],
+    color_stock: p.colorStock ?? {},
     discount_percent: p.discountPercent ?? null,
     season: p.season ?? null,
     active: p.active !== false,
