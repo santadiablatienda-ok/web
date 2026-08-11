@@ -38,7 +38,11 @@ const banners = [
   },
 ]
 
-export function CategoryBanners() {
+interface CategoryBannersProps {
+  onSelectCategory: (categoryId: string) => void
+}
+
+export function CategoryBanners({ onSelectCategory }: CategoryBannersProps) {
   return (
     <section className="w-full">
       <div className="px-6 md:px-16 pt-14 pb-6">
@@ -52,10 +56,11 @@ export function CategoryBanners() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-px" style={{ backgroundColor: "#EBEBEB" }}>
         {banners.map((b) => (
-          <a
+          <button
             key={b.id}
-            href="#catalogo"
-            className="relative block w-full overflow-hidden group bg-white"
+            type="button"
+            onClick={() => onSelectCategory(b.id)}
+            className="relative block w-full overflow-hidden group bg-white text-left"
             style={{ aspectRatio: "3/4" }}
             aria-label={`Ver categoria ${b.label}`}
           >
@@ -81,7 +86,7 @@ export function CategoryBanners() {
                 {b.label}
               </h3>
             </div>
-          </a>
+          </button>
         ))}
       </div>
     </section>

@@ -10,6 +10,8 @@ interface CatalogProps {
   onAddToCart: (product: Product, quantity: number, selectedSize?: string, isBackorder?: boolean, selectedColor?: string) => void
   search: string
   onSearchChange: (value: string) => void
+  category: string
+  onCategoryChange: (value: string) => void
 }
 
 type SortOption = "destacados" | "precio-asc" | "precio-desc" | "nombre-asc" | "nombre-desc"
@@ -27,8 +29,9 @@ function sizeSortKey(size: string): number {
   return Number.isNaN(n) ? Infinity : n
 }
 
-export function Catalog({ onAddToCart, search, onSearchChange }: CatalogProps) {
-  const [selectedCategory, setSelectedCategory] = useState("todos")
+export function Catalog({ onAddToCart, search, onSearchChange, category, onCategoryChange }: CatalogProps) {
+  const selectedCategory = category
+  const setSelectedCategory = onCategoryChange
   const [selectedBrand, setSelectedBrand] = useState("todas")
   const [selectedSizes, setSelectedSizes] = useState<string[]>([])
   const [selectedColors, setSelectedColors] = useState<string[]>([])
@@ -40,6 +43,12 @@ export function Catalog({ onAddToCart, search, onSearchChange }: CatalogProps) {
     getProducts().then(setProducts).catch(() => {})
     getCategories().then(setCategories).catch(() => {})
   }, [])
+
+  useEffect(() => {
+    setSelectedBrand("todas")
+    setSelectedSizes([])
+    setSelectedColors([])
+  }, [category])
 
   const brandsForCategory = Array.from(
     new Set(products.filter((p) => p.category === selectedCategory && p.brand).map((p) => p.brand!))
