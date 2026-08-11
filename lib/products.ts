@@ -14,12 +14,13 @@ export interface Product {
   badge?: string
   featured?: boolean
   sizes?: string[]
-  stock?: number        // -1 = encargo puro, 0 = sin stock, >0 = con stock (fallback cuando no hay stock por talle)
-  sizeStock?: Record<string, number>  // stock puntual por talle; si falta un talle acá se toma como 0
+  stock?: number        // -1 = encargo puro, 0 = sin stock, >0 = con stock (fallback cuando no hay talles ni colores)
+  sizeStock?: Record<string, number>  // stock por talle; solo se usa si el producto tiene talles pero NO colores
   isEncargo?: boolean
   active?: boolean      // false = desactivado a mano: se muestra "Agotado" en la tienda pero no se puede comprar ni encargar (default true)
   colors?: string[]
-  colorStock?: Record<string, number>  // stock puntual por color; si falta un color acá se toma como 0
+  colorStock?: Record<string, number>  // stock por color; solo se usa si el producto tiene colores pero NO talles
+  variantStock?: Record<string, Record<string, number>>  // stock[talle][color]; cuando el producto tiene talles Y colores a la vez, esto manda sobre sizeStock/colorStock
   discountPercent?: number  // 0-100, descuento simple sobre el precio
   season?: string           // etiqueta libre, ej: "Verano 2026", "Invierno 2026"
   onSale?: boolean          // incluido a mano en el carrusel "Sale" del home (independiente del descuento)

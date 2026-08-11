@@ -46,22 +46,35 @@ export function ProductPage({ product }: ProductPageProps) {
   const hasSizes = product.sizes && product.sizes.length > 0
   const hasColors = product.colors && product.colors.length > 1
   const isEncargo = product.isEncargo
-  const usesSizeStock = hasSizes && !!product.sizeStock && Object.keys(product.sizeStock).length > 0
-  const usesColorStock = hasColors && !!product.colorStock && Object.keys(product.colorStock).length > 0
+  const hasBothDims = hasSizes && !!product.colors && product.colors.length > 0
+  const usesVariantStock = hasBothDims && !!product.variantStock && Object.keys(product.variantStock).length > 0
+  const usesSizeStock = !usesVariantStock && hasSizes && !!product.sizeStock && Object.keys(product.sizeStock).length > 0
+  const usesColorStock = !usesVariantStock && hasColors && !!product.colorStock && Object.keys(product.colorStock).length > 0
   const hasDiscount = !!product.discountPercent && product.discountPercent > 0
   const priceNow = finalPrice(product)
 
+  const singleColor = product.colors && product.colors.length === 1 ? product.colors[0] : undefined
+  const effectiveColor = selectedColor || singleColor
+
+  function stockForVariant(color: string, size: string): number {
+    return product.variantStock?.[size]?.[color] ?? 0
+  }
+
   function stockForSize(size: string): number {
+    if (usesVariantStock && effectiveColor) return stockForVariant(effectiveColor, size)
     if (usesSizeStock) return product.sizeStock![size] ?? 0
     return product.stock ?? 0
   }
 
   function stockForColor(color: string): number {
+    if (usesVariantStock && selectedSize) return stockForVariant(color, selectedSize)
     if (usesColorStock) return product.colorStock![color] ?? 0
     return product.stock ?? 0
   }
 
-  const totalStock = usesSizeStock
+  const totalStock = usesVariantStock
+    ? Object.values(product.variantStock!).reduce((sum, byColor) => sum + Object.values(byColor).reduce((a, b) => a + b, 0), 0)
+    : usesSizeStock
     ? Object.values(product.sizeStock!).reduce((a, b) => a + b, 0)
     : usesColorStock
     ? Object.values(product.colorStock!).reduce((a, b) => a + b, 0)
@@ -70,13 +83,11 @@ export function ProductPage({ product }: ProductPageProps) {
   const outOfStock = !isEncargo && totalStock === 0
 
   const needsBackorder = isInactive || (
+    usesVariantStock ? (effectiveColor && selectedSize ? stockForVariant(effectiveColor, selectedSize) <= 0 : (isEncargo || outOfStock)) :
     usesSizeStock && selectedSize ? stockForSize(selectedSize) <= 0 :
     usesColorStock && selectedColor ? stockForColor(selectedColor) <= 0 :
     (isEncargo || outOfStock)
   )
-
-  const singleColor = product.colors && product.colors.length === 1 ? product.colors[0] : undefined
-  const effectiveColor = selectedColor || singleColor
 
   function validateSelection(): boolean {
     let ok = true
@@ -230,7 +241,9 @@ export function ProductPage({ product }: ProductPageProps) {
                 <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#5C5C5C", letterSpacing: "0.08em" }}>Color</p>
                 <div className="flex flex-wrap gap-2">
                   {product.colors.map((color) => {
-                    const colorOut = usesColorStock && stockForColor(color) <= 0
+                    const colorOut = usesVariantStock
+                      ? !!selectedSize && stockForColor(color) <= 0
+                      : usesColorStock && stockForColor(color) <= 0
                     return hasColors ? (
                       <button
                         key={color}
@@ -267,7 +280,9 @@ export function ProductPage({ product }: ProductPageProps) {
                 <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#5C5C5C", letterSpacing: "0.08em" }}>Talle</p>
                 <div className="flex flex-wrap gap-2">
                   {product.sizes!.map((size) => {
-                    const sizeOut = usesSizeStock && stockForSize(size) <= 0
+                    const sizeOut = usesVariantStock
+                      ? !!effectiveColor && stockForSize(size) <= 0
+                      : usesSizeStock && stockForSize(size) <= 0
                     return (
                       <button
                         key={size}
@@ -287,6 +302,17 @@ export function ProductPage({ product }: ProductPageProps) {
                 {sizeError && <p className="text-xs mt-1.5 font-semibold" style={{ color: "#E63946" }}>Selecciona un talle antes de continuar</p>}
                 {usesSizeStock && selectedSize && stockForSize(selectedSize) <= 0 && (
                   <p className="text-xs mt-1.5 font-semibold" style={{ color: "#E63946" }}>Talle {selectedSize} sin stock — se pide por encargo</p>
+                )}
+                {usesVariantStock && (
+                  effectiveColor && selectedSize ? (
+                    stockForVariant(effectiveColor, selectedSize) > 0 ? (
+                      <p className="text-xs mt-1.5" style={{ color: "#5C5C5C" }}>Stock disponible: {stockForVariant(effectiveColor, selectedSize)} unidades</p>
+                    ) : (
+                      <p className="text-xs mt-1.5 font-semibold" style={{ color: "#E63946" }}>Sin stock en {effectiveColor} / talle {selectedSize} — se pide por encargo</p>
+                    )
+                  ) : (
+                    <p className="text-xs mt-1.5" style={{ color: "#9E9E9E" }}>Elegí color y talle para ver el stock disponible</p>
+                  )
                 )}
               </div>
             )}
