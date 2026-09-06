@@ -161,6 +161,18 @@ export function Footer() {
         >
           <p>&copy; {year} Santa Diabla. Todos los derechos reservados.</p>
           <p>Envios a todo el pais, Argentina</p>
+          <p>
+            Desarrollado por{" "}
+            <a
+              href="https://www.neuraldigitalbrand.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium transition-colors hover:text-white"
+              style={{ color: "#5C5C5C" }}
+            >
+              Neural Digital Brand
+            </a>
+          </p>
         </div>
       </div>
     </footer>
