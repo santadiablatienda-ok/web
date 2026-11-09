@@ -103,6 +103,16 @@ npm run dev
 5. `header.tsx`: los anchors del menu (`#catalogo`, `#nosotros`, etc.) se cambiaron a `/#catalogo` etc. para que sigan funcionando estando parado en `/producto/...` y no solo en la home.
 6. Se encontro y reinicio un `next dev` que llevaba **47+ horas corriendo** y tenia los workers de compilacion (Jest workers, usados por SWC) crasheados — tiraba "Jest worker encountered 2 child process exceptions" en cualquier pagina. No relacionado a este cambio, pero bloqueaba probar en local. Si vuelve a pasar tras una sesion muy larga de `npm run dev`, reiniciar el proceso soluciona.
 
+## Qué se hizo (sesión 2026-11-08/09) — alta en RADAR
+
+1. **Perfil de Santa Diabla en radartuciudad.com** (directorio/catálogo de comercios de Concordia, del propio usuario): https://radartuciudad.com/santa-diabla. La cuenta la creó el usuario (Claude no crea cuentas ni pone contraseñas); se usa desde el perfil de Chrome **"Santadiabla"** — el otro Chrome conectado tiene la sesión de RADAR de Cotillón Cienfuegos (otro cliente, no tocar).
+2. Datos cargados: Indumentaria → Calzado, Concordia CP 3200, descripción, WhatsApp, @santadiablatienda, web + link al catálogo, envío a domicilio + retiro, logo (`public/logo.jpg`) y portada (collage de 4 fotos de producto).
+3. **Horario puesto como placeholder (Lun a Sáb 9 a 21, domingo cerrado)** — el usuario no lo confirmó; corregir con el real.
+4. Catálogo: 101 productos activos importados por CSV (Supabase → columnas del importador de RADAR: Categoría, Nombre, Descripción, Precio, Variantes, Adicionales, Talles, Disponible, Colores, Precio anterior, Código de barras). Los 5 de Sale van con precio con 10% off y "Precio anterior" tachado. 98 con foto principal + galería (hasta 8 extra); Arlet, Botas Nepal y Karter siguen sin foto (tampoco tienen en la web).
+5. **El catálogo de RADAR no se sincroniza solo con la web**: si cambian precios/productos en Supabase hay que reimportar el CSV (por nombre actualiza, no borra).
+6. Pendiente en RADAR: dirección/ubicación en el mapa, alias de Mercado Pago, email de contacto/CUIT, avisos al celular, guía de talles.
+7. Bug visto (sin tocar): `components/instagram-feed.tsx` apunta a `@cienfuegoscotillon_concordia` en vez de `@santadiablatienda`.
+
 ## Cómo prefiere trabajar el usuario
 
 - Ir de a partes, no todo en una tanda gigante — avisar y verificar en localhost entre pasos grandes.
