@@ -52,7 +52,7 @@ export function InstagramFeed() {
             style={{ backgroundColor: "oklch(0.6 0.22 5)", color: "oklch(1 0 0)" }}
           >
             <Instagram size={16} />
-            @cienfuegoscotillon_concordia
+            @santadiablatienda
           </a>
         </div>
 
