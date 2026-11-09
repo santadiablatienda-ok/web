@@ -45,7 +45,7 @@ export function InstagramFeed() {
             </h2>
           </div>
           <a
-            href="https://www.instagram.com/cienfuegoscotillon_concordia/"
+            href="https://www.instagram.com/santadiablatienda/"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition-all hover:scale-105 shrink-0"
@@ -78,14 +78,14 @@ export function InstagramFeed() {
               Mientras tanto, podés ver nuestras publicaciones directamente en Instagram.
             </p>
             <a
-              href="https://www.instagram.com/cienfuegoscotillon_concordia/"
+              href="https://www.instagram.com/santadiablatienda/"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 text-sm font-bold hover:opacity-80 transition-opacity mt-1"
               style={{ color: "oklch(0.6 0.22 5)" }}
             >
               <Instagram size={16} />
-              @cienfuegoscotillon_concordia
+              @santadiablatienda
             </a>
           </div>
         )}
@@ -107,7 +107,7 @@ export function InstagramFeed() {
                 {/* Imagen */}
                 <img
                   src={post.mediaUrl}
-                  alt={post.caption ? post.caption.slice(0, 100) : "Publicación de Instagram de Cotillón Cienfuegos"}
+                  alt={post.caption ? post.caption.slice(0, 100) : "Publicación de Instagram de Santa Diabla"}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   loading="lazy"
                 />

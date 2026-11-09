@@ -89,7 +89,7 @@ export function AuthModal({ isOpen, onClose, onSessionChange }: AuthModalProps) 
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest mb-0.5" style={{ color: "oklch(1 0 0 / 0.7)" }}>
-                Cotillón Cienfuegos
+                Santa Diabla
               </p>
               <p className="text-lg font-extrabold" style={{ color: "oklch(1 0 0)" }}>
                 {tab === "login" ? "Iniciar sesión" : "Crear cuenta"}

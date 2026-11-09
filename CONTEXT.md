@@ -111,7 +111,7 @@ npm run dev
 4. Catálogo: 101 productos activos importados por CSV (Supabase → columnas del importador de RADAR: Categoría, Nombre, Descripción, Precio, Variantes, Adicionales, Talles, Disponible, Colores, Precio anterior, Código de barras). Los 5 de Sale van con precio con 10% off y "Precio anterior" tachado. 98 con foto principal + galería (hasta 8 extra); Arlet, Botas Nepal y Karter siguen sin foto (tampoco tienen en la web).
 5. **El catálogo de RADAR no se sincroniza solo con la web**: si cambian precios/productos en Supabase hay que reimportar el CSV (por nombre actualiza, no borra).
 6. Pendiente en RADAR: dirección/ubicación en el mapa, alias de Mercado Pago, email de contacto/CUIT, avisos al celular, guía de talles.
-7. Bug visto (sin tocar): `components/instagram-feed.tsx` apunta a `@cienfuegoscotillon_concordia` en vez de `@santadiablatienda`.
+7. Restos de Cotillón Cienfuegos corregidos: `components/instagram-feed.tsx` (apuntaba a `@cienfuegoscotillon_concordia`) y el título de `components/auth-modal.tsx`. Ninguno de los dos componentes se usa hoy en ninguna página.
 
 ## Cómo prefiere trabajar el usuario
 
