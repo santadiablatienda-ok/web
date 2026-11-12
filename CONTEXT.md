@@ -106,11 +106,11 @@ npm run dev
 ## Qué se hizo (sesión 2026-11-08/09) — alta en RADAR
 
 1. **Perfil de Santa Diabla en radartuciudad.com** (directorio/catálogo de comercios de Concordia, del propio usuario): https://radartuciudad.com/santa-diabla. La cuenta la creó el usuario (Claude no crea cuentas ni pone contraseñas); se usa desde el perfil de Chrome **"Santadiabla"** — el otro Chrome conectado tiene la sesión de RADAR de Cotillón Cienfuegos (otro cliente, no tocar).
-2. Datos cargados: Indumentaria → Calzado, Concordia CP 3200, descripción, WhatsApp, @santadiablatienda, web + link al catálogo, envío a domicilio + retiro, logo (`public/logo.jpg`) y portada (collage de 4 fotos de producto).
+2. Datos cargados: Indumentaria → Calzado, Concordia CP 3200, descripción, WhatsApp, @santadiablatienda, web + link al catálogo, solo envío a domicilio (es venta 100% online, no hay local a la calle — "Retiro en el local" destildado el 2026-11-11), logo (`public/logo.jpg`) y portada (collage de 4 fotos de producto).
 3. **Horario puesto como placeholder (Lun a Sáb 9 a 21, domingo cerrado)** — el usuario no lo confirmó; corregir con el real.
 4. Catálogo: 101 productos activos importados por CSV (Supabase → columnas del importador de RADAR: Categoría, Nombre, Descripción, Precio, Variantes, Adicionales, Talles, Disponible, Colores, Precio anterior, Código de barras). Los 5 de Sale van con precio con 10% off y "Precio anterior" tachado. 98 con foto principal + galería (hasta 8 extra); Arlet, Botas Nepal y Karter siguen sin foto (tampoco tienen en la web).
 5. **El catálogo de RADAR no se sincroniza solo con la web**: si cambian precios/productos en Supabase hay que reimportar el CSV (por nombre actualiza, no borra).
-6. Pendiente en RADAR: dirección/ubicación en el mapa, alias de Mercado Pago, email de contacto/CUIT, avisos al celular, guía de talles.
+6. Pendiente en RADAR: alias de Mercado Pago, email de contacto/CUIT, avisos al celular, guía de talles. **Ubicación en el mapa: no aplica** (sin local físico; RADAR no tiene opción "solo online", así que ese paso queda incompleto y el perfil no llega al 100% del checklist — no cargar una dirección inventada).
 7. Restos de Cotillón Cienfuegos corregidos: `components/instagram-feed.tsx` (apuntaba a `@cienfuegoscotillon_concordia`) y el título de `components/auth-modal.tsx`. Ninguno de los dos componentes se usa hoy en ninguna página.
 
 ## Cómo prefiere trabajar el usuario
