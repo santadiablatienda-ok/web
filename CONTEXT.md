@@ -120,3 +120,12 @@ npm run dev
 - **No borrar/mover archivos sin autorización explícita**, ni siquiera si parecen sueltos o de origen dudoso — en esta sesión se borraron 2 fotos (portada + referencia de talles) asumiendo que eran de prueba y no lo eran. El usuario lo remarcó fuerte: confirmar antes de borrar, no asumir.
 - No crear cuentas/contraseñas de admin pidiéndoselas por chat en texto plano si se puede evitar (generarla uno mismo y no pedirla) — aunque en la práctica el usuario prefirió dictar sus propias credenciales, y hay que respetar exactamente esas y no crear usuarios de más.
 - Feedback directo recibido en esta sesión: pidió menos preguntas de aclaración encadenadas y más resolución decisiva — priorizar hacer el llamado razonable y avisar, en vez de frenar seguido a preguntar.
+
+## Qué se hizo (sesión 2026-11-17) — catálogo para RADAR por link
+
+1. **`/api/catalogo/radar.csv`** (`app/api/catalogo/radar.csv/route.ts` + `lib/catalogo-radar.ts`): CSV con las columnas de la planilla de RADAR (ID, Categoría, Nombre, Descripción, Precio, Precio anterior, Talles, Colores, Disponible, Stock por talle, Talles agotados, Foto, Más fotos), UTF-8 con BOM, coma, todo entre comillas. RADAR lo lee todos los días y actualiza solo el perfil https://radartuciudad.com/santa-diabla (ya no hace falta reimportar a mano).
+   - Precio = final con el descuento; Precio anterior = el de lista si hay descuento. Stock por talle = suma de colores (de `variant_stock`, `size_stock`, `color_stock` o `stock`); los encargos no mandan stock.
+   - Los desactivados con precio van "Disponible = No"; los desactivados **sin precio** (altas que esperan precio/foto) no se mandan.
+   - **Nunca se exporta `cost`** ni nada del admin. Cache de 5 min en la CDN.
+2. Probado contra los datos reales: 137 filas (101 a la venta + 36 agotados con precio); en RADAR los 101 existentes se adoptan por nombre (0 duplicados, 0 errores).
+3. Dominio real de la tienda: **www.santadiablatienda.com** (en RADAR figuraba `santadiabla.com`, que es un dominio en venta).
